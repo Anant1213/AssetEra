@@ -567,3 +567,26 @@ def kpi_row(items: list[dict]) -> None:
 
 def disclaimer(text: str = "For educational purposes only. Not investment advice.") -> None:
     st.html(f'<div class="ae-disclaimer">⚠ {text}</div>')
+
+
+def skeleton_loader(rows: int = 3, height: str = "80px") -> None:
+    """Render a skeleton loading animation."""
+    skeleton_css = """
+    <style>
+    @keyframes skeleton-loading {
+      0% { background-position: -1000px 0; }
+      100% { background-position: 1000px 0; }
+    }
+    .skeleton-loader {
+      height: """ + height + """;
+      background: linear-gradient(90deg, var(--bg-card) 25%, var(--bg-overlay) 50%, var(--bg-card) 75%);
+      background-size: 1000px 100%;
+      animation: skeleton-loading 2s infinite;
+      border-radius: var(--r-lg);
+      margin-bottom: 12px;
+    }
+    </style>
+    """
+    st.markdown(skeleton_css, unsafe_allow_html=True)
+    for _ in range(rows):
+        st.markdown('<div class="skeleton-loader"></div>', unsafe_allow_html=True)

@@ -16,14 +16,24 @@ st.set_page_config(
 )
 apply_styles()
 
-# ── Ticker tape (load all allowlisted tickers) ────────────────────────
+# ── Ticker tape (load key tickers only) ────────────────────────────────
+# Focus on the most popular ETFs and stocks for faster initial load
+TOP_TICKERS = ["SPY", "QQQ", "DIA", "IWM", "AGG", "NVDA", "MSFT", "AVGO", "LQD", "VEA"]
+
 @st.cache_data(ttl=300, show_spinner=False)
 def _load_tape():
-    prices, _ = fetch_prices(sorted(ALLOWLIST), period="5d", interval="1d")
+    prices, _ = fetch_prices(TOP_TICKERS, period="5d", interval="1d")
     return compute_metrics(prices)
 
-tape_df = _load_tape()
-ticker_tape(tape_df)
+with st.spinner("📊 Loading market data..."):
+    try:
+        tape_df = _load_tape()
+        if tape_df is not None and not tape_df.empty:
+            ticker_tape(tape_df)
+        else:
+            st.warning("Market data temporarily unavailable")
+    except Exception as e:
+        st.warning(f"Could not load market data: {e}")
 
 # ── Hero ──────────────────────────────────────────────────────────────
 st.markdown(
