@@ -73,8 +73,8 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# ── Feature cards ─────────────────────────────────────────────────────
-c1, c2, c3, c4, c5 = st.columns(5)
+# ── Feature cards (Row 1) ─────────────────────────────────────────────
+c1, c2, c3 = st.columns(3)
 
 with c1:
     st.markdown(
@@ -117,6 +117,29 @@ with c3:
         """
         <div class="ae-feat">
           <div class="ae-feat-icon">🎯</div>
+          <div class="ae-feat-title">Portfolio Builder</div>
+          <div class="ae-feat-desc">
+            Build custom portfolios with your own stock/ETF allocations.
+            Backtest your strategy with full institutional-grade metrics and
+            performance analytics. Save and manage multiple portfolios.
+          </div>
+          <span class="ae-feat-tag">Interactive · Backtest Enabled</span>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    if st.button("Open Portfolio Builder →", key="btn_pb", width='stretch'):
+        st.switch_page("pages/3_Portfolio_Builder.py")
+
+# ── Feature cards (Row 2) ─────────────────────────────────────────────
+st.markdown("<br>", unsafe_allow_html=True)
+c4, c5, c6 = st.columns(3)
+
+with c4:
+    st.markdown(
+        """
+        <div class="ae-feat">
+          <div class="ae-feat-icon">🤖</div>
           <div class="ae-feat-title">Risk Profiler</div>
           <div class="ae-feat-desc">
             Gradient Boosting ML model predicts investor risk score.
@@ -129,13 +152,13 @@ with c3:
         unsafe_allow_html=True,
     )
     if st.button("Open Risk Profiler →", key="btn_rp", width='stretch'):
-        st.switch_page("pages/3_Risk_Profiler.py")
+        st.switch_page("pages/4_Risk_Profiler.py")
 
-with c4:
+with c5:
     st.markdown(
         """
         <div class="ae-feat">
-          <div class="ae-feat-icon">🤖</div>
+          <div class="ae-feat-icon">💬</div>
           <div class="ae-feat-title">AI Advisor</div>
           <div class="ae-feat-desc">
             Context-aware portfolio Q&amp;A powered by GPT-4o. Feeds fund
@@ -147,9 +170,9 @@ with c4:
         unsafe_allow_html=True,
     )
     if st.button("Open AI Advisor →", key="btn_ai", width='stretch'):
-        st.switch_page("pages/4_AI_Advisor.py")
+        st.switch_page("pages/5_AI_Advisor.py")
 
-with c5:
+with c6:
     st.markdown(
         """
         <div class="ae-feat">
@@ -165,9 +188,9 @@ with c5:
         unsafe_allow_html=True,
     )
     if st.button("Open Stock Research →", key="btn_res", width='stretch'):
-        st.switch_page("pages/5_Research.py")
+        st.switch_page("pages/6_Research.py")
 
-# ── Row 2: Data Workbench ──────────────────────────────────────────────
+# ── Row 3: Data Workbench ──────────────────────────────────────────────
 st.markdown("<br>", unsafe_allow_html=True)
 dw1, dw2, dw3 = st.columns([1, 2, 1])
 with dw2:
@@ -187,7 +210,7 @@ with dw2:
         unsafe_allow_html=True,
     )
     if st.button("Open Data Workbench →", key="btn_dw", width='stretch'):
-        st.switch_page("pages/6_Data_Workbench.py")
+        st.switch_page("pages/7_Data_Workbench.py")
 
 # ── Quick market snapshot ─────────────────────────────────────────────
 if tape_df is not None and not tape_df.empty:

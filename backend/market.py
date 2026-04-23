@@ -29,6 +29,20 @@ DISK_CACHE_DIR.mkdir(parents=True, exist_ok=True)
 DENYLIST     = {"VIX", "VIXY", "VIXM"}
 DENY_PREFIXES = {"^"}
 
+# Import all tickers from datalayer universe for custom portfolio builder
+try:
+    from datalayer.schemas import (
+        EQUITIES_LARGE, EQUITIES_MID, EQUITIES_SMALL,
+        ETF_TICKERS, FIXED_INCOME_TICKERS
+    )
+    _UNIVERSE_TICKERS = set(
+        list(EQUITIES_LARGE) + list(EQUITIES_MID) + list(EQUITIES_SMALL) +
+        list(ETF_TICKERS) + list(FIXED_INCOME_TICKERS)
+    )
+except Exception:
+    _UNIVERSE_TICKERS = set()
+
+# Original ALLOWLIST for backward compatibility
 ALLOWLIST = {
     # Market ETFs (Market Watch)
     "SPY", "QQQ", "DIA", "IWM", "RSP",
@@ -40,7 +54,7 @@ ALLOWLIST = {
     "ETN", "PH", "HEI", "EME", "PWR", "FAST", "BWXT",
     "IDCC", "RDNT", "DY", "GPI", "ACLS", "TTMI", "AGM",
     "APH", "GWW", "BSX",
-}
+} | _UNIVERSE_TICKERS
 
 PERIODS   = ["6mo", "1y", "2y", "5y", "max"]
 INTERVALS = ["1d", "1wk", "1mo"]
