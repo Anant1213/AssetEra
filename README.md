@@ -599,7 +599,7 @@ Where `Z ~ N(0,1)`, `μ` = expected return, `σ` = volatility, both estimated fr
 
 ```bash
 git clone https://github.com/Anant1213/Invest_helper.git
-cd Invest_helper
+cd AssetEra
 
 python -m venv .venv
 source .venv/bin/activate        # Windows: .venv\Scripts\activate
