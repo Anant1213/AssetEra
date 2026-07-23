@@ -160,6 +160,17 @@ def _connect():
     return psycopg.connect(url, prepare_threshold=None)
 
 
+def get_connection():
+    """Return a live, raw psycopg3 connection.
+
+    The caller owns the connection lifecycle (commit/close). Unlike the
+    ``with _connect() as conn`` pattern used internally by this module, this
+    returns an open connection that is *not* auto-closed, so callers that
+    manage their own cursors/transactions (e.g. portfolio_store) can use it.
+    """
+    return _connect()
+
+
 def _ensure_schema() -> bool:
     """Ensure us_prices table exists."""
     global _schema_ready
