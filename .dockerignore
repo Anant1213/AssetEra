@@ -1,0 +1,35 @@
+# Python virtualenvs (host-built, wrong platform — never ship these)
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Secrets — provided via Railway environment variables, never baked into image
+.env
+.env.*
+.streamlit/secrets.toml
+
+# Local data cache — app rehydrates from S3 / yfinance at runtime
+data_cache/
+
+# Trained model — regenerated on first run if missing
+models/*.pkl
+
+# Version control & CI
+.git/
+.github/
+
+# Editor / OS cruft
+.idea/
+.vscode/
+*.code-workspace
+.claude/
+.DS_Store
+
+# Docs & local-only compose
+docs/
+docker-compose.yml
+*.md
+!README.md
