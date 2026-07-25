@@ -16,7 +16,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from backend.market import ALLOWLIST, fetch_prices
-from backend.db.postgres_store import is_enabled, postgres_url
+from backend.db.postgres_store import is_enabled, redacted_postgres_url
 
 
 def parse_args() -> argparse.Namespace:
@@ -59,7 +59,7 @@ def main() -> int:
         return 1
 
     print("Batch start UTC:", datetime.now(timezone.utc).isoformat())
-    print("PostgreSQL target:", postgres_url())
+    print("PostgreSQL target:", redacted_postgres_url())
     print("Tickers to sync:", len(tickers))
 
     failed = []

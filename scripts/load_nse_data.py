@@ -30,7 +30,7 @@ import yfinance as yf
 
 from backend.db.postgres_store import (
     is_enabled,
-    postgres_url,
+    redacted_postgres_url,
     upsert_nse_prices,
     reset_nse_prices,
     _ensure_nse_schema,
@@ -162,7 +162,7 @@ def main() -> int:
         print("ERROR: PostgreSQL is not enabled. Set POSTGRES_URL or DATABASE_URL in .env")
         return 1
 
-    print("PostgreSQL target:", postgres_url()[:55] + "...")
+    print("PostgreSQL target:", redacted_postgres_url())
     print(f"Fetch window: {START_DATE} → {END_DATE}")
 
     if not _ensure_nse_schema():

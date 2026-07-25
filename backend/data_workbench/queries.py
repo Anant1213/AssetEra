@@ -33,9 +33,20 @@ logger = logging.getLogger(__name__)
 # ── SQL safety ────────────────────────────────────────────────────────
 
 _DISALLOWED = re.compile(
-    r"\b(INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|TRUNCATE|REPLACE|COPY|GRANT|REVOKE)\b",
+    r"\b(INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|TRUNCATE|REPLACE|COPY|GRANT|REVOKE|ATTACH|DETACH|INSTALL|LOAD|PRAGMA|SET|CALL|EXPORT)\b",
     re.IGNORECASE,
 )
+
+_DISALLOWED_TABLE_FUNCTIONS = re.compile(
+    r"\b(read_parquet|parquet_scan|read_csv|read_csv_auto|csv_scan|read_json|read_json_auto|json_scan|read_text|glob|sqlite_scan|postgres_scan)\s*\(",
+    re.IGNORECASE,
+)
+
+_DATASET_FROM = re.compile(r"\bFROM\s+(dataset|data|tbl|table|df)\b", re.IGNORECASE)
+
+
+def _duckdb_quote(value: str) -> str:
+    return value.replace("'", "''")
 
 
 def _validate_sql(sql: str) -> str | None:
@@ -47,14 +58,23 @@ def _validate_sql(sql: str) -> str | None:
         return "Semicolons are not allowed (prevents multi-statement injection)."
     if _DISALLOWED.search(stripped):
         return "Detected disallowed SQL keyword."
+    if _DISALLOWED_TABLE_FUNCTIONS.search(stripped):
+        return "Direct file/table functions are not allowed. Query FROM dataset instead."
+    if not _DATASET_FROM.search(stripped):
+        return "Queries must read from the uploaded dataset using FROM dataset."
     return None
 
 
 def _inject_limit(sql: str, row_limit: int) -> str:
-    """Append LIMIT clause if not already present."""
+    """Append or clamp LIMIT so callers cannot bypass the row cap."""
     sql = sql.rstrip("; \n\t")
-    if not re.search(r"\bLIMIT\b", sql, re.IGNORECASE):
-        sql += f" LIMIT {row_limit}"
+    limit_match = re.search(r"\bLIMIT\s+(\d+)\b", sql, re.IGNORECASE)
+    if limit_match:
+        requested = int(limit_match.group(1))
+        if requested > row_limit:
+            sql = sql[:limit_match.start(1)] + str(row_limit) + sql[limit_match.end(1):]
+        return sql
+    sql += f" LIMIT {row_limit}"
     return sql
 
 
@@ -106,15 +126,11 @@ def run_sql(
     ref = _parquet_ref(curated_key)
 
     # Replace bare table references "FROM dataset" or "FROM data" with parquet ref
-    sql_exec = re.sub(
-        r"\bFROM\s+(dataset|data|tbl|table|df)\b",
-        f"FROM read_parquet('{ref}')",
+    ref_sql = ref.replace("'", "''")
+    sql_exec = _DATASET_FROM.sub(
+        f"FROM read_parquet('{ref_sql}')",
         sql,
-        flags=re.IGNORECASE,
     )
-    # If no replacement happened and there's no read_parquet already, inject it
-    if "read_parquet" not in sql_exec.lower():
-        sql_exec = sql_exec.replace("FROM ", f"FROM read_parquet('{ref}') -- orig: ")
 
     result: dict = {}
     exc_holder: list = []
@@ -123,16 +139,18 @@ def run_sql(
         try:
             import duckdb
             conn = duckdb.connect()
+            conn.execute("SET memory_limit='512MB';")
+            conn.execute("SET threads=2;")
             # Configure S3 if needed
             try:
                 conn.execute("LOAD httpfs;")
                 region = os.getenv("AWS_REGION", "us-east-1")
                 key_id = os.getenv("AWS_ACCESS_KEY_ID", "")
                 secret = os.getenv("AWS_SECRET_ACCESS_KEY", "")
-                conn.execute(f"SET s3_region='{region}';")
+                conn.execute(f"SET s3_region='{_duckdb_quote(region)}';")
                 if key_id:
-                    conn.execute(f"SET s3_access_key_id='{key_id}';")
-                    conn.execute(f"SET s3_secret_access_key='{secret}';")
+                    conn.execute(f"SET s3_access_key_id='{_duckdb_quote(key_id)}';")
+                    conn.execute(f"SET s3_secret_access_key='{_duckdb_quote(secret)}';")
             except Exception:
                 pass
             df = conn.execute(sql_exec).df()
@@ -165,7 +183,8 @@ def run_sql(
 
 _NL2SQL_SYSTEM = """You are a DuckDB SQL expert.
 Given a dataset schema and a question, produce a single SELECT statement.
-Use read_parquet('<FILE>') as the table (already substituted by caller).
+Use FROM dataset as the table. The caller safely substitutes the uploaded
+dataset parquet path.
 Rules:
   - Output ONLY the SQL, no explanation, no markdown.
   - Use LIMIT 5000 or fewer.

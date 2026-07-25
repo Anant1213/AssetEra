@@ -1,4 +1,4 @@
-FROM python:3.10-slim
+FROM python:3.12-slim
 
 # curl → container HEALTHCHECK; ca-certificates → S3/HTTPS/OpenAI TLS
 RUN apt-get update \
@@ -17,6 +17,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code (see .dockerignore for exclusions: .venv, .git, .env, data_cache…)
 COPY . .
+
+RUN useradd --create-home --shell /usr/sbin/nologin appuser \
+    && chown -R appuser:appuser /app
+USER appuser
 
 # Local default; Railway/other PaaS override $PORT at runtime.
 EXPOSE 8501

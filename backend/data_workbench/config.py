@@ -48,12 +48,14 @@ def get_config() -> DataHubConfig:
         max_sync_mb=int(os.getenv("DATA_MAX_SYNC_MB", "200")),
         profile_sample_rows=int(os.getenv("DATA_PROFILE_SAMPLE_ROWS", "50000")),
         query_row_limit=int(os.getenv("DATA_QUERY_ROW_LIMIT", "5000")),
+        query_timeout_s=int(os.getenv("DATA_QUERY_TIMEOUT_S", "20")),
         openai_model=os.getenv("DATAHUB_LLM_MODEL", "gpt-4o-mini"),
         llm_enabled=bool(os.getenv("OPENAI_API_KEY")),
         sqlite_path=os.getenv(
             "DATAHUB_DB_PATH",
             str(Path.home() / ".assetera" / "datahub.db"),
         ),
+        max_upload_bytes=int(os.getenv("DATA_MAX_UPLOAD_BYTES", str(200 * 1024 * 1024))),
     )
 
 

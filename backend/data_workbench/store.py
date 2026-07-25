@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import json
 import logging
+import shutil
 import sqlite3
 import threading
 import uuid
@@ -233,6 +234,23 @@ def update_dataset(dataset_id: str, **kwargs) -> None:
 
 
 def delete_dataset(dataset_id: str) -> None:
+    row = _conn().execute("SELECT curated_key FROM datasets WHERE id=?", (dataset_id,)).fetchone()
+    curated_key = row["curated_key"] if row else ""
+
+    if curated_key:
+        try:
+            if curated_key.startswith(f"datahub/{dataset_id}/"):
+                from backend.db.s3_store import is_enabled as s3_on, list_keys, delete_key
+                if s3_on():
+                    for key in list_keys(f"datahub/{dataset_id}/"):
+                        delete_key(key)
+            else:
+                path = Path(curated_key)
+                if path.exists() and path.parent.name == dataset_id:
+                    shutil.rmtree(path.parent, ignore_errors=True)
+        except Exception as exc:
+            logger.warning("Could not delete curated data for dataset %s: %s", dataset_id, exc)
+
     _conn().execute("DELETE FROM datasets WHERE id=?", (dataset_id,))
     _conn().commit()
 

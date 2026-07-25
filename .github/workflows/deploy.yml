@@ -1,10 +1,6 @@
-name: Snowflake Deploy
+name: Manual Snowflake Deploy
 
 on:
-  push:
-    branches: ["*"]   # all branches
-  pull_request:
-    branches: [ main ]
   workflow_dispatch:
 
 jobs:
@@ -15,17 +11,17 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install Snowflake Python Connector
-        run: pip install snowflake-connector-python
+        run: pip install snowflake-connector-python==4.7.1
 
       - name: Set target DB
         id: setdb
         run: |
           if [ "${GITHUB_REF_NAME}" = "main" ]; then
             echo "SNOW_DATABASE=${{ secrets.SNOW_DATABASE }}" >> $GITHUB_ENV
-            echo "✅ Set SNOW_DATABASE to ${{ secrets.SNOW_DATABASE }}"
+            echo "✅ Set SNOW_DATABASE for main"
           else
             echo "SNOW_DATABASE=${{ secrets.SNOW_DATABASE_DEV }}" >> $GITHUB_ENV
-            echo "✅ Set SNOW_DATABASE to ${{ secrets.SNOW_DATABASE_DEV }}"
+            echo "✅ Set SNOW_DATABASE for non-main branch"
           fi
 
       - name: Run SQL Deployment

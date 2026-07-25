@@ -15,6 +15,7 @@ import logging
 import os
 from pathlib import Path
 from typing import Optional
+from urllib.parse import urlsplit, urlunsplit
 
 import pandas as pd
 
@@ -141,6 +142,21 @@ _equity_schema_ready = False
 
 def postgres_url() -> str:
     return os.getenv("POSTGRES_URL", "").strip() or os.getenv("DATABASE_URL", "").strip()
+
+
+def redacted_postgres_url() -> str:
+    """Return a log-safe PostgreSQL URL with credentials removed."""
+    url = postgres_url()
+    if not url:
+        return ""
+    try:
+        parsed = urlsplit(url)
+        host = parsed.hostname or ""
+        port = f":{parsed.port}" if parsed.port else ""
+        netloc = f"{host}{port}"
+        return urlunsplit((parsed.scheme, netloc, parsed.path, "", ""))
+    except Exception:
+        return "<configured>"
 
 
 def is_enabled() -> bool:

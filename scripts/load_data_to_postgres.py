@@ -16,7 +16,7 @@ if str(ROOT) not in sys.path:
 from backend.db.postgres_store import (  # noqa: E402
     is_enabled,
     load_csv_file,
-    postgres_url,
+    redacted_postgres_url,
     reset_us_prices as reset_market_prices,
 )
 
@@ -61,7 +61,7 @@ def main() -> int:
         print(f"ERROR: No files found in {source_dir} matching pattern '{args.pattern}'")
         return 1
 
-    print("PostgreSQL target:", postgres_url())
+    print("PostgreSQL target:", redacted_postgres_url())
     print(f"Source directory: {source_dir}")
     print(f"Matching files: {len(files)}")
 

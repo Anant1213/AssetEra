@@ -25,4 +25,6 @@ models/risk_model.pkl
 *.code-workspace
 .claude/
 .telegram_control/
+telegram_control/
+scripts/run_telegram_bot.py
 data_cache/

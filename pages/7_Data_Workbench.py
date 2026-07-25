@@ -2,7 +2,9 @@
 Data Workbench — Upload, profile, explore and query any structured dataset.
 """
 from __future__ import annotations
+import html
 import json
+import os
 import time
 
 import numpy as np
@@ -122,6 +124,12 @@ _PALETTE = ["#2457C5","#0E9F6E","#C77700","#E02749","#A78BFA",
             "#10B981","#F59E0B","#EC4899","#6366F1","#14B8A6",
             "#F97316","#06B6D4","#84CC16"]
 
+_ISSUE_SEVERITIES = {"high", "warning", "info"}
+
+
+def _esc(value) -> str:
+    return html.escape(str(value), quote=True)
+
 def _cl(n: int) -> str:
     return _PALETTE[n % len(_PALETTE)]
 
@@ -134,16 +142,32 @@ def _lyt(h=340, title="", **kw) -> dict:
 def _kpi(label: str, value: str, sub: str = "", accent: str = "var(--accent)") -> str:
     return (
         f'<div class="dw-kpi-card" style="--kpi-accent:{accent};">'
-        f'<div class="dw-kpi-label">{label}</div>'
-        f'<div class="dw-kpi-value">{value}</div>'
-        f'{"<div class=dw-kpi-sub>" + sub + "</div>" if sub else ""}'
+        f'<div class="dw-kpi-label">{_esc(label)}</div>'
+        f'<div class="dw-kpi-value">{_esc(value)}</div>'
+        f'{"<div class=dw-kpi-sub>" + _esc(sub) + "</div>" if sub else ""}'
         f'</div>'
     )
 
 def _issue_html(issue: dict) -> str:
     sev = issue.get("severity", "info").lower()
+    sev = sev if sev in _ISSUE_SEVERITIES else "info"
     icon = {"high":"🔴","warning":"🟡","info":"🔵"}.get(sev,"•")
-    return f'<div class="issue-{sev}">{icon} {issue.get("message","")}</div>'
+    return f'<div class="issue-{sev}">{icon} {_esc(issue.get("message",""))}</div>'
+
+
+def _safe_csv_bytes(df: pd.DataFrame) -> bytes:
+    """Prevent spreadsheet formula execution when exported CSV is opened."""
+    safe = df.copy()
+    dangerous_prefixes = ("=", "+", "-", "@")
+    for col in safe.select_dtypes(include=["object", "string"]).columns:
+        safe[col] = safe[col].map(
+            lambda v: "'" + v if isinstance(v, str) and v.startswith(dangerous_prefixes) else v
+        )
+    return safe.to_csv(index=False).encode()
+
+
+def _fmt_int(value) -> str:
+    return f"{value:,}" if isinstance(value, int) else "—"
 
 # ═══════════════════════════════════════════════════════════════
 # _render_chart  — MUST be defined before tab_views block
@@ -381,6 +405,7 @@ with tab_upload:
             section_header("Upload a Dataset")
 
             from backend.data_workbench.ingest import classify_file, sha256_bytes
+            from backend.data_workbench.config import cfg
 
             st.markdown(
                 '<div class="upload-hint">'
@@ -398,14 +423,23 @@ with tab_upload:
             )
             uploaded = st.file_uploader("File", type=["csv","xlsx","xls","json","parquet"],
                                         key="uploaded_file", label_visibility="collapsed")
+            send_to_ai = False
+            if os.getenv("OPENAI_API_KEY"):
+                send_to_ai = st.checkbox(
+                    "Allow AI analysis for this dataset",
+                    value=False,
+                    help="Sends compact schema, aggregate statistics, quality issues, and your context hint to OpenAI.",
+                    key="dw_ai_consent",
+                )
 
             if uploaded:
                 fmb = uploaded.size / 1e6
                 ft  = classify_file(uploaded.name)
+                max_upload_bytes = cfg().max_upload_bytes
                 st.markdown(
                     f'<div style="background:var(--bg-card);border:1px solid var(--border);'
                     f'border-radius:var(--r-md);padding:.6rem 1rem;font-size:.84rem;margin:.5rem 0;">'
-                    f'📄 <b>{uploaded.name}</b> &nbsp;·&nbsp; {fmb:.1f} MB &nbsp;·&nbsp; {ft}'
+                    f'📄 <b>{_esc(uploaded.name)}</b> &nbsp;·&nbsp; {fmb:.1f} MB &nbsp;·&nbsp; {_esc(ft)}'
                     f'</div>',
                     unsafe_allow_html=True,
                 )
@@ -413,6 +447,8 @@ with tab_upload:
                 if st.button("Process & Profile", key="btn_process", type="primary", use_container_width=True):
                     if not ds_name.strip():
                         st.error("Enter a dataset name.")
+                    elif uploaded.size > max_upload_bytes:
+                        st.error(f"File is too large. Limit is {max_upload_bytes / 1e6:.0f} MB.")
                     else:
                         content = uploaded.read()
                         sha     = sha256_bytes(content)
@@ -428,7 +464,7 @@ with tab_upload:
                             (10, "Parsing file…"),
                             (35, "Building column profiles…"),
                             (60, "Running quality checks…"),
-                            (78, "Generating AI insights…"),
+                            (78, "Preparing insights…"),
                             (92, "Creating auto views…"),
                             (100, "Done!"),
                         ]
@@ -451,8 +487,18 @@ with tab_upload:
                             quality = run_quality_checks(profile)
                             bar.progress(steps[2][0], text=steps[3][1])
 
-                            from backend.data_workbench.llm import get_llm_summary
-                            llm = get_llm_summary(profile, quality, ctx_hint.strip())
+                            if send_to_ai:
+                                from backend.data_workbench.llm import get_llm_summary
+                                llm = get_llm_summary(profile, quality, ctx_hint.strip())
+                            else:
+                                llm = {
+                                    "summary": "AI analysis was not enabled for this dataset.",
+                                    "key_observations": [],
+                                    "suggested_kpis": [],
+                                    "suggested_views": [],
+                                    "next_questions": [],
+                                    "warnings": [],
+                                }
                             bar.progress(steps[3][0], text=steps[4][1])
 
                             from backend.data_workbench.views import generate_view_specs
@@ -501,9 +547,9 @@ with tab_upload:
                         f'display:flex;align-items:center;gap:10px;">'
                         f'<span style="width:7px;height:7px;border-radius:50%;background:{sc_col};'
                         f'display:inline-block;flex-shrink:0;"></span>'
-                        f'<span style="flex:1;font-size:.86rem;font-weight:600;">{d["name"]}</span>'
+                        f'<span style="flex:1;font-size:.86rem;font-weight:600;">{_esc(d["name"])}</span>'
                         f'<span style="font-size:.75rem;color:var(--text-2);">'
-                        f'{d.get("row_count") or "—":,} rows · {d.get("column_count") or "—"} cols</span>'
+                        f'{_fmt_int(d.get("row_count"))} rows · {_fmt_int(d.get("column_count"))} cols</span>'
                         f'</div>',
                         unsafe_allow_html=True,
                     )
@@ -568,7 +614,7 @@ with tab_overview:
                         f'padding:1.1rem 1.4rem;margin:.8rem 0;">'
                         f'<div style="font-size:.7rem;color:var(--accent);text-transform:uppercase;'
                         f'letter-spacing:.08em;margin-bottom:.5rem;font-weight:700;">AI Summary</div>'
-                        f'<div style="color:var(--text);font-size:.92rem;line-height:1.75;">{llm["summary"]}</div>'
+                        f'<div style="color:var(--text);font-size:.92rem;line-height:1.75;">{_esc(llm["summary"])}</div>'
                         f'</div>',
                         unsafe_allow_html=True,
                     )
@@ -576,7 +622,7 @@ with tab_overview:
                         obs_html = "".join(
                             f'<div style="display:flex;align-items:flex-start;gap:8px;margin:.3rem 0;">'
                             f'<span style="color:#2457C5;font-weight:700;margin-top:2px;">›</span>'
-                            f'<span style="font-size:.88rem;color:var(--text-2);">{o}</span></div>'
+                            f'<span style="font-size:.88rem;color:var(--text-2);">{_esc(o)}</span></div>'
                             for o in llm["key_observations"]
                         )
                         st.markdown(obs_html, unsafe_allow_html=True)
@@ -652,8 +698,8 @@ with tab_overview:
                                 st.markdown(
                                     f'<div style="border-left:3px solid #2457C5;padding:5px 10px;margin:4px 0;'
                                     f'font-size:.86rem;">'
-                                    f'<b style="color:var(--text);">{k.get("name","")}</b>'
-                                    f'<br><span style="color:var(--text-2);">{k.get("how","")}</span></div>',
+                                    f'<b style="color:var(--text);">{_esc(k.get("name",""))}</b>'
+                                    f'<br><span style="color:var(--text-2);">{_esc(k.get("how",""))}</span></div>',
                                     unsafe_allow_html=True,
                                 )
                     with q_col:
@@ -874,9 +920,9 @@ with tab_views:
                                         f'<div style="display:flex;align-items:center;gap:8px;margin-bottom:.4rem;">'
                                         f'<span style="width:8px;height:8px;border-radius:50%;'
                                         f'background:{lv_c};display:inline-block;"></span>'
-                                        f'<span class="chart-title">{name}</span>{ai_b}'
+                                        f'<span class="chart-title">{_esc(name)}</span>{ai_b}'
                                         f'</div>'
-                                        + (f'<div class="chart-expl">{expl}</div>' if expl else "")
+                                        + (f'<div class="chart-expl">{_esc(expl)}</div>' if expl else "")
                                         + "</div>",
                                         unsafe_allow_html=True,
                                     )
@@ -963,14 +1009,14 @@ with tab_ask:
                         sql_disp = result.get("sql_executed") or result.get("sql_generated","")
                         if sql_disp:
                             with st.expander("SQL executed", expanded=True):
-                                st.markdown(f'<div class="sql-box">{sql_disp}</div>',
+                                st.markdown(f'<div class="sql-box">{_esc(sql_disp)}</div>',
                                             unsafe_allow_html=True)
 
                         if result.get("explanation"):
                             st.markdown(
                                 f'<div style="background:var(--bg-card);border:1px solid var(--border);'
                                 f'border-radius:var(--r-md);padding:.75rem 1rem;font-size:.88rem;'
-                                f'margin:.6rem 0;">{result["explanation"]}</div>',
+                                f'margin:.6rem 0;">{_esc(result["explanation"])}</div>',
                                 unsafe_allow_html=True,
                             )
 
@@ -1001,7 +1047,7 @@ with tab_ask:
 
                             st.download_button(
                                 "Download result CSV",
-                                data=df_result.to_csv(index=False).encode(),
+                                data=_safe_csv_bytes(df_result),
                                 file_name="query_result.csv",
                                 mime="text/csv",
                                 key="dl_result",

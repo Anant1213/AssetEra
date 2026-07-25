@@ -26,6 +26,9 @@ models/*.pkl
 .vscode/
 *.code-workspace
 .claude/
+.telegram_control/
+telegram_control/
+scripts/run_telegram_bot.py
 .DS_Store
 
 # Docs & local-only compose

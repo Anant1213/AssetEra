@@ -34,6 +34,10 @@ _install_done = False
 _install_lock = threading.Lock()
 
 
+def _duckdb_quote(value: str) -> str:
+    return value.replace("'", "''")
+
+
 # ── Connection factory ────────────────────────────────────────────────
 
 def _configure(conn) -> None:
@@ -66,17 +70,17 @@ def _configure(conn) -> None:
     conn.execute("LOAD httpfs;")
 
     region = REGION or os.getenv("AWS_REGION", "us-east-1")
-    conn.execute(f"SET s3_region = '{region}';")
+    conn.execute(f"SET s3_region = '{_duckdb_quote(region)}';")
 
     key_id = os.getenv("AWS_ACCESS_KEY_ID", "")
     secret = os.getenv("AWS_SECRET_ACCESS_KEY", "")
     token  = os.getenv("AWS_SESSION_TOKEN", "")
 
     if key_id:
-        conn.execute(f"SET s3_access_key_id = '{key_id}';")
-        conn.execute(f"SET s3_secret_access_key = '{secret}';")
+        conn.execute(f"SET s3_access_key_id = '{_duckdb_quote(key_id)}';")
+        conn.execute(f"SET s3_secret_access_key = '{_duckdb_quote(secret)}';")
     if token:
-        conn.execute(f"SET s3_session_token = '{token}';")
+        conn.execute(f"SET s3_session_token = '{_duckdb_quote(token)}';")
 
 
 def get_conn():

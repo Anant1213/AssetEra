@@ -6,6 +6,8 @@ Call apply_styles() at the top of every page.
 """
 
 from __future__ import annotations
+import hmac
+import os
 import streamlit as st
 import pandas as pd
 from dotenv import load_dotenv
@@ -455,6 +457,41 @@ hr { border-color:var(--border) !important; opacity:1 !important; margin:1.2rem 
 def apply_styles() -> None:
     """Inject the full AssetEra design system CSS."""
     st.markdown(_CSS, unsafe_allow_html=True)
+    require_app_auth()
+
+
+def _config_value(name: str) -> str:
+    value = os.getenv(name, "").strip()
+    if value:
+        return value
+    try:
+        return str(st.secrets.get(name, "")).strip()
+    except Exception:
+        return ""
+
+
+def require_app_auth() -> None:
+    """Password-gate hosted deployments unless public-demo mode is explicit."""
+    allow_public = _config_value("ASSETERA_ALLOW_PUBLIC_DEMO").lower() in {"1", "true", "yes"}
+    if allow_public or st.session_state.get("_assetera_authenticated"):
+        return
+
+    password = _config_value("APP_PASSWORD")
+    st.markdown("### AssetEra Access")
+    if not password:
+        st.error("APP_PASSWORD is not configured. Public access is locked for safety.")
+        st.info("Set APP_PASSWORD in Streamlit Cloud secrets, or set ASSETERA_ALLOW_PUBLIC_DEMO=1 for a public demo.")
+        st.stop()
+
+    with st.form("_assetera_auth"):
+        entered = st.text_input("Password", type="password")
+        submitted = st.form_submit_button("Unlock")
+    if submitted and hmac.compare_digest(entered, password):
+        st.session_state["_assetera_authenticated"] = True
+        st.rerun()
+    if submitted:
+        st.error("Incorrect password.")
+    st.stop()
 
 
 # ── Shared navigation ─────────────────────────────────────────────────
