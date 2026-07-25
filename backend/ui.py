@@ -1,7 +1,7 @@
 """
 AssetEra Design System v2.0
 ============================
-Bloomberg Terminal-grade CSS + reusable HTML component helpers.
+Light off-white finance dashboard CSS + reusable HTML component helpers.
 Call apply_styles() at the top of every page.
 """
 
@@ -12,24 +12,36 @@ from dotenv import load_dotenv
 
 load_dotenv()   # ensure .env is loaded for every page that imports this module
 
+# ── Shared chart palette (light theme) ────────────────────────────────
+# Kept in sync with the CSS design tokens below so charts and UI match.
+CHART_PLOT_BG = "#FFFFFF"
+CHART_GRID    = "#E8E2D6"
+CHART_ZERO    = "#C9C2B4"
+CHART_ACCENT  = "#2457C5"
+CHART_GREEN   = "#0E9F6E"
+CHART_RED     = "#E02749"
+CHART_YELLOW  = "#C77700"
+CHART_TEXT    = "#1F2933"
+CHART_TEXT_2  = "#5F6B7A"
+
 # ── Plotly chart defaults ─────────────────────────────────────────────
 CHART_LAYOUT = dict(
     paper_bgcolor="rgba(0,0,0,0)",
-    plot_bgcolor="#0A1220",
-    font=dict(family="Inter, sans-serif", color="#E4EAF5", size=12),
-    xaxis=dict(gridcolor="#1A2840", zeroline=False, showgrid=True),
-    yaxis=dict(gridcolor="#1A2840", zeroline=False, showgrid=True),
+    plot_bgcolor=CHART_PLOT_BG,
+    font=dict(family="Inter, sans-serif", color=CHART_TEXT, size=12),
+    xaxis=dict(gridcolor=CHART_GRID, zeroline=False, showgrid=True),
+    yaxis=dict(gridcolor=CHART_GRID, zeroline=False, showgrid=True),
     legend=dict(
-        bgcolor="rgba(10,18,32,0.8)",
-        bordercolor="#1A2840",
+        bgcolor="rgba(255,255,255,0.85)",
+        bordercolor="#D8D1C3",
         borderwidth=1,
         font=dict(size=11),
     ),
     margin=dict(l=50, r=20, t=40, b=40),
     hoverlabel=dict(
-        bgcolor="#0D1525",
-        bordercolor="#1A2840",
-        font=dict(family="JetBrains Mono, monospace", size=12),
+        bgcolor="#FFFFFF",
+        bordercolor="#D8D1C3",
+        font=dict(family="JetBrains Mono, monospace", size=12, color=CHART_TEXT),
     ),
 )
 
@@ -40,25 +52,25 @@ _CSS = """
 
 /* ── Design Tokens ───────────────────────────────────────────────── */
 :root {
-  --bg:            #05080F;
-  --bg-elevated:   #0A1020;
-  --bg-card:       #0D1525;
-  --bg-overlay:    #111C30;
-  --border-dim:    #121E30;
-  --border:        #1A2840;
-  --border-active: #2962FF;
-  --accent:        #2962FF;
-  --accent-dim:    rgba(41,98,255,0.12);
-  --accent-glow:   rgba(41,98,255,0.28);
-  --green:         #00C896;
-  --green-dim:     rgba(0,200,150,0.10);
-  --red:           #FF3560;
-  --red-dim:       rgba(255,53,96,0.10);
-  --yellow:        #FFB020;
-  --yellow-dim:    rgba(255,176,32,0.10);
-  --text:          #E4EAF5;
-  --text-2:        #7A8BA0;
-  --text-3:        #3A4A60;
+  --bg:            #FAF8F2;
+  --bg-elevated:   #F3EFE7;
+  --bg-card:       #FFFFFF;
+  --bg-overlay:    #F5F1E8;
+  --border-dim:    #E8E2D6;
+  --border:        #D8D1C3;
+  --border-active: #2457C5;
+  --accent:        #2457C5;
+  --accent-dim:    rgba(36,87,197,0.10);
+  --accent-glow:   rgba(36,87,197,0.22);
+  --green:         #0E9F6E;
+  --green-dim:     rgba(14,159,110,0.12);
+  --red:           #E02749;
+  --red-dim:       rgba(224,39,73,0.10);
+  --yellow:        #C77700;
+  --yellow-dim:    rgba(199,119,0,0.12);
+  --text:          #1F2933;
+  --text-2:        #5F6B7A;
+  --text-3:        #6B7280;   /* darkened for AA contrast (≈4.6:1 on --bg) */
   --mono:          'JetBrains Mono', 'Cascadia Code', monospace;
   --sans:          'Inter', system-ui, sans-serif;
   --r-sm:  6px;
@@ -70,12 +82,40 @@ _CSS = """
 /* ── Reset ───────────────────────────────────────────────────────── */
 #MainMenu, header[data-testid="stHeader"], footer,
 .stDeployButton { visibility:hidden !important; height:0 !important; }
+/* Keep the sidebar expand/collapse toggle reachable even though the
+   Streamlit header is hidden — otherwise native page nav can vanish. */
+[data-testid="stSidebarCollapseButton"],
+[data-testid="collapsedControl"],
+[data-testid="stSidebarCollapsedControl"] {
+  visibility:visible !important;
+  height:auto !important;
+  z-index:1000 !important;
+}
 .block-container { padding:0.5rem 1.8rem 2rem !important; max-width:100% !important; }
 .stApp { background:var(--bg); color:var(--text); font-family:var(--sans); }
 
+/* ── Shared top navigation ───────────────────────────────────────── */
+.ae-nav {
+  display:flex; flex-wrap:wrap; gap:6px; align-items:center;
+  padding:.55rem 0 .85rem; margin:0 0 .2rem;
+  border-bottom:1px solid var(--border-dim);
+}
+.ae-nav a {
+  text-decoration:none; white-space:nowrap;
+  font-size:.8rem; font-weight:600; color:var(--text-2);
+  background:var(--bg-card); border:1px solid var(--border);
+  border-radius:100px; padding:.32rem .82rem; line-height:1;
+  transition:border-color .15s, color .15s, background .15s;
+}
+.ae-nav a:hover { border-color:var(--accent); color:var(--accent); }
+.ae-nav a.active {
+  background:var(--accent); border-color:var(--accent); color:#fff;
+}
+@media (max-width:640px){ .ae-nav a { font-size:.76rem; padding:.3rem .7rem; } }
+
 /* ── Sidebar ─────────────────────────────────────────────────────── */
 section[data-testid="stSidebar"] {
-  background: #060C18 !important;
+  background: #F1ECE1 !important;
   border-right: 1px solid var(--border) !important;
 }
 section[data-testid="stSidebar"] p,
@@ -136,7 +176,7 @@ section[data-testid="stSidebar"] h3 { font-size:0.78rem !important; text-transfo
   box-shadow: 0 2px 14px var(--accent-dim) !important;
 }
 .stButton > button[kind="primary"]:hover {
-  background:#1A52E0 !important;
+  background:#1C46A8 !important;
   box-shadow: 0 4px 24px var(--accent-glow) !important;
   transform:translateY(-1px) !important;
 }
@@ -281,10 +321,10 @@ hr { border-color:var(--border) !important; opacity:1 !important; margin:1.2rem 
 .ae-title { font-size:1.8rem; font-weight:800; letter-spacing:-0.02em; color:var(--text); }
 .ae-badge {
   display:inline-flex; align-items:center; gap:5px;
-  background:var(--accent-dim); color:#5C8BFF;
+  background:var(--accent-dim); color:var(--accent);
   font-size:0.7rem; font-weight:700; text-transform:uppercase;
   letter-spacing:0.1em; padding:3px 10px; border-radius:100px;
-  border:1px solid rgba(41,98,255,0.18);
+  border:1px solid rgba(36,87,197,0.18);
 }
 .ae-subtitle { font-size:0.9rem; color:var(--text-2); font-weight:400; }
 
@@ -313,7 +353,7 @@ hr { border-color:var(--border) !important; opacity:1 !important; margin:1.2rem 
 .ae-etf:hover {
   border-color:var(--accent); background:var(--bg-overlay);
   transform:translateY(-2px);
-  box-shadow:0 8px 28px rgba(0,0,0,.35);
+  box-shadow:0 8px 24px rgba(31,41,51,.10);
 }
 .ae-etf-hdr { display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; }
 .ae-etf-sym { font-family:var(--mono); font-weight:800; font-size:0.95rem; color:var(--text); }
@@ -351,21 +391,21 @@ hr { border-color:var(--border) !important; opacity:1 !important; margin:1.2rem 
 
 /* ── Landing hero ────────────────────────────────────────────────── */
 .ae-hero {
-  background: linear-gradient(135deg, rgba(41,98,255,.08) 0%, rgba(0,200,150,.04) 60%, transparent 100%);
+  background: linear-gradient(135deg, rgba(36,87,197,.08) 0%, rgba(14,159,110,.04) 60%, transparent 100%);
   border:1px solid var(--border); border-radius:var(--r-xl);
   padding:3rem 2.5rem 2.5rem; margin-bottom:2rem; position:relative; overflow:hidden;
 }
 .ae-hero::before {
   content:''; position:absolute; top:-80px; right:-80px;
   width:300px; height:300px; border-radius:50%;
-  background:radial-gradient(circle, rgba(41,98,255,.12) 0%, transparent 70%);
+  background:radial-gradient(circle, rgba(36,87,197,.12) 0%, transparent 70%);
 }
 .ae-hero-badge {
   display:inline-flex; align-items:center; gap:6px;
   background:var(--green-dim); color:var(--green);
   font-size:0.72rem; font-weight:700; text-transform:uppercase;
   letter-spacing:.1em; padding:4px 12px; border-radius:100px;
-  border:1px solid rgba(0,200,150,.2); margin-bottom:1rem;
+  border:1px solid rgba(14,159,110,.2); margin-bottom:1rem;
 }
 .ae-status { width:7px; height:7px; border-radius:50%; background:var(--green); box-shadow:0 0 6px var(--green); animation:ae-pulse 2s infinite; }
 @keyframes ae-pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
@@ -383,7 +423,7 @@ hr { border-color:var(--border) !important; opacity:1 !important; margin:1.2rem 
 }
 .ae-feat:hover {
   border-color:var(--accent); background:var(--bg-overlay);
-  transform:translateY(-3px); box-shadow:0 12px 40px rgba(0,0,0,.4);
+  transform:translateY(-3px); box-shadow:0 12px 32px rgba(31,41,51,.12);
 }
 .ae-feat-icon { font-size:1.8rem; margin-bottom:.8rem; }
 .ae-feat-title { font-size:1rem; font-weight:700; color:var(--text); margin-bottom:.4rem; }
@@ -417,7 +457,36 @@ def apply_styles() -> None:
     st.markdown(_CSS, unsafe_allow_html=True)
 
 
+# ── Shared navigation ─────────────────────────────────────────────────
+# (label, url). Streamlit derives each page URL from its filename minus the
+# leading number/underscore, e.g. pages/1_Market_Watch.py -> /Market_Watch.
+NAV_ITEMS: list[tuple[str, str]] = [
+    ("Home",              "/"),
+    ("Market Watch",      "/Market_Watch"),
+    ("Fund Backtester",   "/Fund_Backtester"),
+    ("Portfolio Builder", "/Portfolio_Builder"),
+    ("Risk Profiler",     "/Risk_Profiler"),
+    ("AI Advisor",        "/AI_Advisor"),
+    ("Stock Research",    "/Research"),
+    ("Data Workbench",    "/Data_Workbench"),
+]
+
+
+def nav_bar(active: str = "") -> None:
+    """Render a horizontal top-nav linking to Home and all pages.
+
+    Uses plain anchor links (target=_self) so navigation works regardless of
+    whether the native Streamlit sidebar is visible or collapsed.
+    """
+    parts = []
+    for label, url in NAV_ITEMS:
+        cls = ' class="active"' if label == active else ""
+        parts.append(f'<a href="{url}" target="_self"{cls}>{label}</a>')
+    st.html(f'<nav class="ae-nav">{"".join(parts)}</nav>')
+
+
 def page_header(title: str, subtitle: str = "", badge: str = "") -> None:
+    nav_bar(active=title)
     badge_html = f'<span class="ae-badge">{badge}</span>' if badge else ""
     subtitle_html = f'<div class="ae-subtitle">{subtitle}</div>' if subtitle else ""
     st.html(
@@ -455,6 +524,29 @@ def section_header(title: str) -> None:
         </div>
         """
     )
+
+
+@st.cache_data(ttl=300, show_spinner=False)
+def _tape_metrics_cached():
+    """Fetch + compute metrics for the small shared tape list (cached 5 min)."""
+    from backend import market
+    prices, _ = market.fetch_prices(market.TAPE_TICKERS, period="5d", interval="1d")
+    return market.compute_metrics(prices)
+
+
+def live_ticker_tape() -> None:
+    """Render the shared, small, cached ticker tape.
+
+    This is the single entry point every page should use for the decorative
+    top-of-page tape. It fetches only ``market.TAPE_TICKERS`` (~10 symbols),
+    is cached for 5 minutes, and never raises — the tape is cosmetic and must
+    never block or break page rendering.
+    """
+    try:
+        ticker_tape(_tape_metrics_cached())
+    except Exception:
+        # Decorative widget only — degrade silently rather than break the page.
+        return
 
 
 def ticker_tape(metrics_df: pd.DataFrame) -> None:

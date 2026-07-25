@@ -8,19 +8,13 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from backend.ui import apply_styles, page_header, section_header, ticker_tape, disclaimer, CHART_LAYOUT
-from backend.market import fetch_prices, compute_metrics, ALLOWLIST
+from backend.ui import apply_styles, page_header, section_header, live_ticker_tape, disclaimer, CHART_LAYOUT
 from backend.ai_advisor.advisor import get_system_prompt, stream_response
 
 st.set_page_config(page_title="AI Advisor — AssetEra", page_icon="🤖", layout="wide")
 apply_styles()
 
-@st.cache_data(ttl=300, show_spinner=False)
-def _tape():
-    p, _ = fetch_prices(sorted(ALLOWLIST), period="5d", interval="1d")
-    return compute_metrics(p)
-
-ticker_tape(_tape())
+live_ticker_tape()
 page_header("AI Advisor", "Context-aware portfolio Q&A · Powered by GPT-4o", badge="GPT-4o · STREAMING")
 
 # ── API key check ─────────────────────────────────────────────────────
@@ -55,7 +49,7 @@ with top_left:
                        4: "Moderately Aggressive", 5: "Aggressive"}
         risk_label = RISK_LABELS.get(user_risk, "")
         st.markdown(
-            f'<div style="background:var(--green-dim);border:1px solid rgba(0,200,150,.25);'
+            f'<div style="background:var(--green-dim);border:1px solid rgba(14,159,110,.25);'
             f'border-radius:10px;padding:.6rem 1rem;display:inline-flex;align-items:center;gap:12px;">'
             f'<span style="color:var(--green);font-weight:700;font-size:.82rem;">RISK PROFILE LOADED</span>'
             f'<span style="color:var(--text);font-size:1.3rem;font-weight:800;font-family:var(--mono);">{user_risk}/5</span>'

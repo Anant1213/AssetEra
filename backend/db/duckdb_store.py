@@ -37,7 +37,22 @@ _install_lock = threading.Lock()
 # ── Connection factory ────────────────────────────────────────────────
 
 def _configure(conn) -> None:
-    """Install httpfs and apply S3 credentials to a fresh DuckDB connection."""
+    """Install httpfs and apply S3 credentials to a fresh DuckDB connection.
+
+    httpfs is only needed to read from S3. When S3 is not enabled (local-only
+    mode) we skip the INSTALL/LOAD entirely — that network-backed extension
+    install is pure cold-start latency for queries that only touch local
+    parquet files.
+    """
+    try:
+        from backend.db.s3_store import is_enabled as _s3_on
+        s3_active = _s3_on()
+    except Exception:
+        s3_active = False
+
+    if not s3_active:
+        return
+
     global _install_done
     # Install httpfs extension once per process (it's cached on disk after first install)
     with _install_lock:

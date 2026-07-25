@@ -7,7 +7,7 @@ import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-from backend.ui import apply_styles, page_header, section_header, etf_cards, ticker_tape, disclaimer, CHART_LAYOUT
+from backend.ui import apply_styles, page_header, section_header, etf_cards, live_ticker_tape, disclaimer, CHART_LAYOUT
 from backend.market import (
     ALLOWLIST, PERIODS, INTERVALS, DEFAULT_PERIOD, DEFAULT_INTERVAL,
     fetch_prices, compute_metrics, build_timeseries, corr_matrix,
@@ -18,13 +18,8 @@ from backend.indicators import rsi, bollinger_bands, macd
 st.set_page_config(page_title="Market Watch — AssetEra", page_icon="📈", layout="wide")
 apply_styles()
 
-# ── Load all tickers for tape ─────────────────────────────────────────
-@st.cache_data(ttl=300, show_spinner=False)
-def _tape_data():
-    p, _ = fetch_prices(sorted(ALLOWLIST), period="5d", interval="1d")
-    return compute_metrics(p)
-
-ticker_tape(_tape_data())
+# ── Ticker tape (shared small cached list — never the full ALLOWLIST) ──
+live_ticker_tape()
 page_header("Market Watch", "Candlestick charts · Technical indicators · Correlation heatmap", badge="DISK CACHE")
 
 # ── Inline Controls ───────────────────────────────────────────────────
@@ -128,48 +123,48 @@ with tab_candle:
             open=ticker_data["Open"], high=ticker_data["High"],
             low=ticker_data["Low"],  close=ticker_data["Close"],
             name=chart_ticker,
-            increasing_line_color="#00C896", increasing_fillcolor="rgba(0,200,150,.7)",
-            decreasing_line_color="#FF3560", decreasing_fillcolor="rgba(255,53,96,.7)",
+            increasing_line_color="#0E9F6E", increasing_fillcolor="rgba(14,159,110,.7)",
+            decreasing_line_color="#E02749", decreasing_fillcolor="rgba(224,39,73,.7)",
             showlegend=False,
         ), row=1, col=1)
 
         if show_bb:
             upper, mid, lower = bollinger_bands(ticker_data["Close"])
             fig.add_trace(go.Scatter(x=ticker_data.index, y=upper, name="BB Upper",
-                line=dict(color="rgba(41,98,255,.5)", width=1, dash="dot"), showlegend=True), row=1, col=1)
+                line=dict(color="rgba(36,87,197,.5)", width=1, dash="dot"), showlegend=True), row=1, col=1)
             fig.add_trace(go.Scatter(x=ticker_data.index, y=mid, name="BB Mid (20MA)",
-                line=dict(color="rgba(255,176,32,.6)", width=1), showlegend=True), row=1, col=1)
+                line=dict(color="rgba(199,119,0,.6)", width=1), showlegend=True), row=1, col=1)
             fig.add_trace(go.Scatter(x=ticker_data.index, y=lower, name="BB Lower",
-                line=dict(color="rgba(41,98,255,.5)", width=1, dash="dot"),
-                fill="tonexty", fillcolor="rgba(41,98,255,.03)", showlegend=True), row=1, col=1)
+                line=dict(color="rgba(36,87,197,.5)", width=1, dash="dot"),
+                fill="tonexty", fillcolor="rgba(36,87,197,.03)", showlegend=True), row=1, col=1)
 
         cur_row = 2
         if show_rsi:
             rsi_vals = rsi(ticker_data["Close"])
             fig.add_trace(go.Scatter(x=ticker_data.index, y=rsi_vals, name="RSI",
-                line=dict(color="#FFB020", width=1.5), showlegend=False), row=cur_row, col=1)
-            fig.add_hline(y=70, line_dash="dash", line_color="rgba(255,53,96,.4)",
+                line=dict(color="#C77700", width=1.5), showlegend=False), row=cur_row, col=1)
+            fig.add_hline(y=70, line_dash="dash", line_color="rgba(224,39,73,.4)",
                           annotation_text="OB 70", annotation_position="right", row=cur_row, col=1)
-            fig.add_hline(y=30, line_dash="dash", line_color="rgba(0,200,150,.4)",
+            fig.add_hline(y=30, line_dash="dash", line_color="rgba(14,159,110,.4)",
                           annotation_text="OS 30", annotation_position="right", row=cur_row, col=1)
-            fig.add_hrect(y0=70, y1=100, fillcolor="rgba(255,53,96,.04)", line_width=0, row=cur_row, col=1)
-            fig.add_hrect(y0=0,  y1=30,  fillcolor="rgba(0,200,150,.04)", line_width=0, row=cur_row, col=1)
+            fig.add_hrect(y0=70, y1=100, fillcolor="rgba(224,39,73,.04)", line_width=0, row=cur_row, col=1)
+            fig.add_hrect(y0=0,  y1=30,  fillcolor="rgba(14,159,110,.04)", line_width=0, row=cur_row, col=1)
             fig.update_yaxes(range=[0, 100], row=cur_row, col=1)
             cur_row += 1
 
         if show_macd:
             m_line, s_line, hist = macd(ticker_data["Close"])
             fig.add_trace(go.Scatter(x=ticker_data.index, y=m_line, name="MACD",
-                line=dict(color="#2962FF", width=1.5), showlegend=False), row=cur_row, col=1)
+                line=dict(color="#2457C5", width=1.5), showlegend=False), row=cur_row, col=1)
             fig.add_trace(go.Scatter(x=ticker_data.index, y=s_line, name="Signal",
-                line=dict(color="#FFB020", width=1.2), showlegend=False), row=cur_row, col=1)
-            colors = ["#00C896" if v >= 0 else "#FF3560" for v in hist.fillna(0)]
+                line=dict(color="#C77700", width=1.2), showlegend=False), row=cur_row, col=1)
+            colors = ["#0E9F6E" if v >= 0 else "#E02749" for v in hist.fillna(0)]
             fig.add_trace(go.Bar(x=ticker_data.index, y=hist, marker_color=colors,
                 name="Histogram", showlegend=False, opacity=0.7), row=cur_row, col=1)
             cur_row += 1
 
         if show_volume:
-            vol_colors = ["#00C896" if c >= o else "#FF3560"
+            vol_colors = ["#0E9F6E" if c >= o else "#E02749"
                           for c, o in zip(ticker_data["Close"], ticker_data["Open"])]
             fig.add_trace(go.Bar(x=ticker_data.index, y=ticker_data["Volume"],
                 marker_color=vol_colors, name="Volume", showlegend=False, opacity=0.7),
@@ -180,8 +175,8 @@ with tab_candle:
         layout["xaxis_rangeslider_visible"] = False
         layout["margin"] = dict(l=55, r=20, t=20, b=40)
         fig.update_layout(**layout)
-        fig.update_xaxes(showgrid=True, gridcolor="#1A2840")
-        fig.update_yaxes(showgrid=True, gridcolor="#1A2840")
+        fig.update_xaxes(showgrid=True, gridcolor="#E8E2D6")
+        fig.update_yaxes(showgrid=True, gridcolor="#E8E2D6")
         st.plotly_chart(fig, width='stretch')
 
 # ── Tab 2: Normalised Performance ────────────────────────────────────
@@ -190,7 +185,7 @@ with tab_perf:
     if ts.empty:
         st.info("No data to display.")
     else:
-        palette = ["#2962FF","#00C896","#FFB020","#FF3560","#A78BFA",
+        palette = ["#2457C5","#0E9F6E","#C77700","#E02749","#A78BFA",
                    "#F59E0B","#10B981","#EF4444","#3B82F6","#EC4899",
                    "#14B8A6","#F97316","#6366F1"]
         fig_line = go.Figure()

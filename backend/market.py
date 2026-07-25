@@ -39,8 +39,23 @@ try:
         list(EQUITIES_LARGE) + list(EQUITIES_MID) + list(EQUITIES_SMALL) +
         list(ETF_TICKERS) + list(FIXED_INCOME_TICKERS)
     )
+    # Direct symbol → asset-class map so S3 reads hit ONE key instead of probing
+    # equities, etf and fixed_income in sequence (three remote round-trips, two
+    # of them guaranteed misses) for every ticker.
+    try:
+        from datalayer.schemas import ASSET_EQUITIES, ASSET_ETF, ASSET_FIXED_INCOME
+        _SYMBOL_ASSET_CLASS: Dict[str, str] = {}
+        for _t in list(EQUITIES_LARGE) + list(EQUITIES_MID) + list(EQUITIES_SMALL):
+            _SYMBOL_ASSET_CLASS[_t.upper()] = ASSET_EQUITIES
+        for _t in ETF_TICKERS:
+            _SYMBOL_ASSET_CLASS[_t.upper()] = ASSET_ETF
+        for _t in FIXED_INCOME_TICKERS:
+            _SYMBOL_ASSET_CLASS[_t.upper()] = ASSET_FIXED_INCOME
+    except Exception:
+        _SYMBOL_ASSET_CLASS = {}
 except Exception:
     _UNIVERSE_TICKERS = set()
+    _SYMBOL_ASSET_CLASS = {}
 
 # Original ALLOWLIST for backward compatibility
 ALLOWLIST = {
@@ -56,8 +71,27 @@ ALLOWLIST = {
     "APH", "GWW", "BSX",
 } | _UNIVERSE_TICKERS
 
+# Small curated list for the decorative animated ticker tape shown at the top
+# of pages. Keep this tiny: the tape is cosmetic and must NEVER trigger a fetch
+# of the full ALLOWLIST (~200 symbols), which was the primary cause of slow
+# page loads (a serial per-ticker cache/staleness/yfinance loop on every load).
+TAPE_TICKERS = [
+    "SPY", "QQQ", "DIA", "IWM", "AGG",
+    "NVDA", "MSFT", "AVGO", "LQD", "VEA",
+]
+
 PERIODS   = ["6mo", "1y", "2y", "5y", "max"]
 INTERVALS = ["1d", "1wk", "1mo"]
+
+# Optional lightweight timing instrumentation. Enable by setting env
+# ASSETERA_PERF_LOG=1. Logs durations only — never ticker payloads or secrets.
+import os as _os
+_PERF_LOG = _os.getenv("ASSETERA_PERF_LOG", "").strip().lower() in ("1", "true", "yes")
+
+
+def _perf(label: str, start: float) -> None:
+    if _PERF_LOG:
+        logger.info("perf %s: %.3fs", label, time.time() - start)
 
 # ── Logging ───────────────────────────────────────────────────────────
 for _n in ("yfinance", "urllib3", "requests", "peewee"):
@@ -166,8 +200,12 @@ def _read_from_s3(ticker: str) -> Optional[pd.DataFrame]:
         from datalayer.s3 import read_parquet, curated_key
         from datalayer.schemas import ASSET_EQUITIES, ASSET_ETF, ASSET_FIXED_INCOME
 
-        # Try equities, then ETF, then fixed income
-        for asset_class in [ASSET_EQUITIES, ASSET_ETF, ASSET_FIXED_INCOME]:
+        # Prefer a direct, single-key lookup using the symbol→asset-class map.
+        # Only fall back to probing all classes for symbols we can't classify.
+        mapped = _SYMBOL_ASSET_CLASS.get(ticker.upper())
+        asset_classes = [mapped] if mapped else [ASSET_EQUITIES, ASSET_ETF, ASSET_FIXED_INCOME]
+
+        for asset_class in asset_classes:
             try:
                 key = curated_key(asset_class, "yfinance", ticker)
                 df = read_parquet(key)
@@ -356,6 +394,7 @@ def fetch_prices(
         return pd.DataFrame(columns=cols), errors
 
     now = time.time()
+    _t0 = now
     out_frames = []
 
     for t in tickers:
@@ -380,10 +419,12 @@ def fetch_prices(
         out_frames.append(df)
 
     if not out_frames:
+        _perf(f"fetch_prices({len(tickers)} tickers)", _t0)
         return pd.DataFrame(columns=cols), errors
 
     result = pd.concat(out_frames, ignore_index=True)
     _coerce_naive_utc_inplace(result)
+    _perf(f"fetch_prices({len(tickers)} tickers)", _t0)
     return result.sort_values(["Ticker", "Date"]).reset_index(drop=True), errors
 
 

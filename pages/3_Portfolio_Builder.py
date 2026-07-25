@@ -12,9 +12,9 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from backend.ui import (
-    apply_styles, page_header, section_header, kpi_row, ticker_tape, disclaimer, CHART_LAYOUT
+    apply_styles, page_header, section_header, kpi_row, live_ticker_tape, disclaimer, CHART_LAYOUT
 )
-from backend.market import fetch_prices, compute_metrics, ALLOWLIST
+from backend.market import ALLOWLIST
 from backend.backtest_engine import (
     fetch_portfolio_prices, renorm_weights, portfolio_equity_curve,
     benchmark_equity_curve, compute_enhanced_metrics
@@ -45,13 +45,8 @@ if "pb_name" not in st.session_state:
 if "pb_description" not in st.session_state:
     st.session_state.pb_description = ""
 
-# ── Ticker tape ───────────────────────────────────────────────────────
-@st.cache_data(ttl=300, show_spinner=False)
-def _tape():
-    p, _ = fetch_prices(sorted(list(ALLOWLIST)[:10]), period="5d", interval="1d")
-    return compute_metrics(p)
-
-ticker_tape(_tape())
+# ── Ticker tape (shared small cached list) ────────────────────────────
+live_ticker_tape()
 
 page_header("Portfolio Builder", "Design and backtest custom asset allocations", badge="INTERACTIVE")
 
@@ -160,7 +155,7 @@ with tab1:
                     go.Pie(
                         labels=[h["ticker"] for h in holdings_for_chart],
                         values=[h["weight"] for h in holdings_for_chart],
-                        marker=dict(colors=["#2962FF", "#00C896", "#FFB020", "#FF3560", "#A78BFA"] * 10),
+                        marker=dict(colors=["#2457C5", "#0E9F6E", "#C77700", "#E02749", "#A78BFA"] * 10),
                     )
                 ])
                 fig_pie.update_layout(
@@ -349,7 +344,7 @@ with tab2:
                         df_plot[BENCHMARKS[b]["name"]] = bs
 
             fig_eq = go.Figure()
-            palette = ["#2962FF", "#00C896", "#FFB020", "#FF3560", "#A78BFA"]
+            palette = ["#2457C5", "#0E9F6E", "#C77700", "#E02749", "#A78BFA"]
             for i, col in enumerate(df_plot.columns):
                 fig_eq.add_trace(
                     go.Scatter(
@@ -378,8 +373,8 @@ with tab2:
                     x=dd.index,
                     y=dd,
                     fill="tozeroy",
-                    fillcolor="rgba(255,53,96,.12)",
-                    line=dict(color="#FF3560", width=1.5),
+                    fillcolor="rgba(224,39,73,.12)",
+                    line=dict(color="#E02749", width=1.5),
                     name="Drawdown",
                 )
             )

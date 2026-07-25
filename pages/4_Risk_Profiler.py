@@ -10,8 +10,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
-from backend.ui import apply_styles, page_header, section_header, kpi_row, ticker_tape, disclaimer, CHART_LAYOUT
-from backend.market import fetch_prices, compute_metrics, ALLOWLIST
+from backend.ui import apply_styles, page_header, section_header, kpi_row, live_ticker_tape, disclaimer, CHART_LAYOUT
 from backend.risk_profiler.risk_model import (
     predict_risk, recommend_funds, get_trained_model,
     RISK_LABELS, FUND_PROFILES,
@@ -21,12 +20,7 @@ from backend.indicators import monte_carlo_gbm, mc_percentiles
 st.set_page_config(page_title="Risk Profiler — AssetEra", page_icon="🎯", layout="wide")
 apply_styles()
 
-@st.cache_data(ttl=300, show_spinner=False)
-def _tape():
-    p, _ = fetch_prices(sorted(ALLOWLIST), period="5d", interval="1d")
-    return compute_metrics(p)
-
-ticker_tape(_tape())
+live_ticker_tape()
 page_header("Risk Profiler", "ML-predicted investor risk score · Monte Carlo portfolio simulation", badge="GBM · GBT MODEL")
 
 # ── Input form ────────────────────────────────────────────────────────
@@ -65,8 +59,8 @@ if result:
     st.markdown("---")
     section_header("Risk Assessment")
 
-    RISK_COLOR = {1:"#00C896", 2:"#84CC16", 3:"#FFB020", 4:"#F97316", 5:"#FF3560"}
-    color = RISK_COLOR.get(result["risk_profile"], "#7A8BA0")
+    RISK_COLOR = {1:"#0E9F6E", 2:"#84CC16", 3:"#C77700", 4:"#F97316", 5:"#E02749"}
+    color = RISK_COLOR.get(result["risk_profile"], "#5F6B7A")
 
     score_col, prob_col = st.columns([1, 2])
 
@@ -96,7 +90,7 @@ if result:
             y=[probs[k] * 100 for k in sorted(probs)],
             marker=dict(
                 color=[probs[k] * 100 for k in sorted(probs)],
-                colorscale=[[0,"#00C896"],[0.5,"#FFB020"],[1,"#FF3560"]],
+                colorscale=[[0,"#0E9F6E"],[0.5,"#C77700"],[1,"#E02749"]],
                 showscale=False,
             ),
             text=[f"{probs[k]*100:.1f}%" for k in sorted(probs)],
@@ -104,7 +98,7 @@ if result:
         ))
         layout = dict(**CHART_LAYOUT)
         layout.update(height=280, margin=dict(l=20, r=20, t=30, b=60),
-                      yaxis=dict(range=[0, 105], title="Probability (%)", gridcolor="#1A2840"))
+                      yaxis=dict(range=[0, 105], title="Probability (%)", gridcolor="#E8E2D6"))
         fig_p.update_layout(**layout, title="Prediction Probability by Risk Level")
         st.plotly_chart(fig_p, width='stretch')
 
@@ -134,7 +128,7 @@ if result:
                     labels=list(major.keys()),
                     values=list(major.values()),
                     hole=0.45,
-                    marker=dict(colors=["#2962FF","#00C896","#FFB020","#FF3560","#A78BFA",
+                    marker=dict(colors=["#2457C5","#0E9F6E","#C77700","#E02749","#A78BFA",
                                         "#10B981","#F59E0B","#EC4899","#6366F1","#14B8A6"]),
                     textinfo="label+percent",
                     textfont=dict(size=11),
@@ -196,23 +190,23 @@ if result:
             fig_mc.add_trace(go.Scatter(
                 x=np.concatenate([xs, xs[::-1]]),
                 y=np.concatenate([pcts["p95"], pcts["p5"][::-1]]),
-                fill="toself", fillcolor="rgba(41,98,255,.07)",
+                fill="toself", fillcolor="rgba(36,87,197,.07)",
                 line=dict(color="rgba(0,0,0,0)"), name="5–95th pct", showlegend=True,
             ))
             # 75/25 band
             fig_mc.add_trace(go.Scatter(
                 x=np.concatenate([xs, xs[::-1]]),
                 y=np.concatenate([pcts["p75"], pcts["p25"][::-1]]),
-                fill="toself", fillcolor="rgba(41,98,255,.14)",
+                fill="toself", fillcolor="rgba(36,87,197,.14)",
                 line=dict(color="rgba(0,0,0,0)"), name="25–75th pct", showlegend=True,
             ))
             # Percentile lines
             for pct_key, col, lbl, dash, wd in [
-                ("p95", "rgba(41,98,255,.5)",  "95th",  "dot",   1.2),
-                ("p75", "rgba(41,98,255,.7)",  "75th",  "dot",   1.2),
-                ("p50", "#2962FF",              "Median","solid", 2.5),
-                ("p25", "rgba(255,176,32,.7)", "25th",  "dot",   1.2),
-                ("p5",  "rgba(255,53,96,.5)",  "5th",   "dot",   1.2),
+                ("p95", "rgba(36,87,197,.5)",  "95th",  "dot",   1.2),
+                ("p75", "rgba(36,87,197,.7)",  "75th",  "dot",   1.2),
+                ("p50", "#2457C5",              "Median","solid", 2.5),
+                ("p25", "rgba(199,119,0,.7)", "25th",  "dot",   1.2),
+                ("p5",  "rgba(224,39,73,.5)",  "5th",   "dot",   1.2),
             ]:
                 fig_mc.add_trace(go.Scatter(
                     x=xs, y=pcts[pct_key], mode="lines", name=lbl,
@@ -224,13 +218,13 @@ if result:
                              annotation_text="Initial", annotation_position="right")
             # Goal line
             fig_mc.add_hline(y=mc_goal, line_dash="dash",
-                             line_color="#FFB020", line_width=1.5,
+                             line_color="#C77700", line_width=1.5,
                              annotation_text=f"Goal ${mc_goal:,.0f}", annotation_position="right")
 
             layout = dict(**CHART_LAYOUT)
             layout.update(height=460, margin=dict(l=70, r=80, t=40, b=50),
-                          yaxis=dict(title="Portfolio Value ($)", tickprefix="$", gridcolor="#1A2840"),
-                          xaxis=dict(title="Years", gridcolor="#1A2840"),
+                          yaxis=dict(title="Portfolio Value ($)", tickprefix="$", gridcolor="#E8E2D6"),
+                          xaxis=dict(title="Years", gridcolor="#E8E2D6"),
                           legend=dict(orientation="h", y=-0.15))
             fig_mc.update_layout(**layout, title=f"Monte Carlo Simulation — {n_sims:,} Paths ({mc_years}y horizon)")
             st.plotly_chart(fig_mc, width='stretch')
@@ -253,12 +247,12 @@ if result:
             section_header("Distribution of Final Portfolio Values")
             fig_hist = go.Figure(go.Histogram(
                 x=final, nbinsx=60,
-                marker=dict(color="#2962FF", opacity=0.75),
+                marker=dict(color="#2457C5", opacity=0.75),
                 name="Final Value",
             ))
-            fig_hist.add_vline(x=mc_goal, line_dash="dash", line_color="#FFB020",
+            fig_hist.add_vline(x=mc_goal, line_dash="dash", line_color="#C77700",
                                annotation_text="Goal", line_width=2)
-            fig_hist.add_vline(x=np.median(final), line_dash="dash", line_color="#00C896",
+            fig_hist.add_vline(x=np.median(final), line_dash="dash", line_color="#0E9F6E",
                                annotation_text="Median", line_width=2)
             layout = dict(**CHART_LAYOUT)
             layout.update(height=300, margin=dict(l=55, r=20, t=30, b=40),
@@ -285,13 +279,13 @@ if result:
             x=imp["Importance"][::-1], y=imp["Feature"][::-1],
             orientation="h",
             marker=dict(color=imp["Importance"][::-1],
-                        colorscale=[[0,"#1A2840"],[1,"#2962FF"]]),
+                        colorscale=[[0,"#E8E2D6"],[1,"#2457C5"]]),
             text=[f"{v:.3f}" for v in imp["Importance"][::-1]],
             textposition="outside",
         ))
         layout = dict(**CHART_LAYOUT)
         layout.update(height=310, margin=dict(l=20, r=60, t=30, b=20),
-                      xaxis=dict(title="Importance Score", gridcolor="#1A2840"))
+                      xaxis=dict(title="Importance Score", gridcolor="#E8E2D6"))
         fig_imp.update_layout(**layout, title="Feature Importances")
         st.plotly_chart(fig_imp, width='stretch')
 

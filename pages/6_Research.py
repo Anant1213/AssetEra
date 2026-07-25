@@ -322,8 +322,8 @@ with tab_screen:
         for col in green_cols:
             if col in df_in.columns:
                 styles[col] = df_in[col].apply(
-                    lambda v: "color:#00C896;font-weight:700" if isinstance(v, (int, float)) and v > 0
-                    else ("color:#FF3560;font-weight:700" if isinstance(v, (int, float)) and v < 0 else "")
+                    lambda v: "color:#0E9F6E;font-weight:700" if isinstance(v, (int, float)) and v > 0
+                    else ("color:#E02749;font-weight:700" if isinstance(v, (int, float)) and v < 0 else "")
                 )
         return styles
 
@@ -439,10 +439,10 @@ with tab_dive:
                 x=ohlcv["Date"], open=ohlcv["Open"], high=ohlcv["High"],
                 low=ohlcv["Low"], close=ohlcv["Close"],
                 name=dd_ticker,
-                increasing_line_color="#00C896",
-                decreasing_line_color="#FF3560",
-                increasing_fillcolor="#00C896",
-                decreasing_fillcolor="#FF3560",
+                increasing_line_color="#0E9F6E",
+                decreasing_line_color="#E02749",
+                increasing_fillcolor="#0E9F6E",
+                decreasing_fillcolor="#E02749",
             ), row=1, col=1)
 
             # Bollinger Bands
@@ -451,19 +451,19 @@ with tab_dive:
                 if "bb_upper" in tec.columns:
                     fig.add_trace(go.Scatter(
                         x=tec.index, y=tec["bb_upper"], name="BB Upper",
-                        line=dict(color="rgba(41,98,255,0.45)", width=1, dash="dot"),
+                        line=dict(color="rgba(36,87,197,0.45)", width=1, dash="dot"),
                         showlegend=False,
                     ), row=1, col=1)
                     fig.add_trace(go.Scatter(
                         x=tec.index, y=tec["bb_mid"] if "bb_mid" in tec.columns else tec["ma_20"],
                         name="BB Mid",
-                        line=dict(color="rgba(41,98,255,0.6)", width=1),
+                        line=dict(color="rgba(36,87,197,0.6)", width=1),
                         showlegend=False,
                     ), row=1, col=1)
                     fig.add_trace(go.Scatter(
                         x=tec.index, y=tec["bb_lower"], name="BB Lower",
                         fill="tonexty" if False else None,
-                        line=dict(color="rgba(41,98,255,0.45)", width=1, dash="dot"),
+                        line=dict(color="rgba(36,87,197,0.45)", width=1, dash="dot"),
                         showlegend=False,
                     ), row=1, col=1)
 
@@ -473,7 +473,7 @@ with tab_dive:
                 if "ma_50" in tec.columns:
                     fig.add_trace(go.Scatter(
                         x=tec.index, y=tec["ma_50"], name="MA 50",
-                        line=dict(color="#FFB020", width=1.2),
+                        line=dict(color="#C77700", width=1.2),
                     ), row=1, col=1)
                 if "ma_200" in tec.columns:
                     fig.add_trace(go.Scatter(
@@ -488,10 +488,10 @@ with tab_dive:
                 if "rsi_14" in tec.columns:
                     fig.add_trace(go.Scatter(
                         x=tec.index, y=tec["rsi_14"], name="RSI 14",
-                        line=dict(color="#2962FF", width=1.5),
+                        line=dict(color="#2457C5", width=1.5),
                     ), row=cur_row, col=1)
-                    fig.add_hline(y=70, line=dict(color="#FF3560", dash="dot", width=1), row=cur_row, col=1)
-                    fig.add_hline(y=30, line=dict(color="#00C896", dash="dot", width=1), row=cur_row, col=1)
+                    fig.add_hline(y=70, line=dict(color="#E02749", dash="dot", width=1), row=cur_row, col=1)
+                    fig.add_hline(y=30, line=dict(color="#0E9F6E", dash="dot", width=1), row=cur_row, col=1)
                     fig.update_yaxes(title_text="RSI", row=cur_row, col=1, range=[0, 100])
                     cur_row += 1
 
@@ -499,7 +499,7 @@ with tab_dive:
             if show_mac and "technical" in hist:
                 tec = hist["technical"]
                 if "macd_hist" in tec.columns:
-                    colors_mac = ["#00C896" if v >= 0 else "#FF3560" for v in tec["macd_hist"].fillna(0)]
+                    colors_mac = ["#0E9F6E" if v >= 0 else "#E02749" for v in tec["macd_hist"].fillna(0)]
                     fig.add_trace(go.Bar(
                         x=tec.index, y=tec["macd_hist"], name="MACD Hist",
                         marker_color=colors_mac, opacity=0.75,
@@ -507,12 +507,12 @@ with tab_dive:
                     if "macd_line" in tec.columns:
                         fig.add_trace(go.Scatter(
                             x=tec.index, y=tec["macd_line"], name="MACD",
-                            line=dict(color="#2962FF", width=1.2),
+                            line=dict(color="#2457C5", width=1.2),
                         ), row=cur_row, col=1)
                     if "macd_signal" in tec.columns:
                         fig.add_trace(go.Scatter(
                             x=tec.index, y=tec["macd_signal"], name="Signal",
-                            line=dict(color="#FFB020", width=1.2),
+                            line=dict(color="#C77700", width=1.2),
                         ), row=cur_row, col=1)
                     fig.update_yaxes(title_text="MACD", row=cur_row, col=1)
                     cur_row += 1
@@ -520,7 +520,7 @@ with tab_dive:
             # Volume
             if show_vol:
                 vol_colors = [
-                    "#00C896" if ohlcv["Close"].iloc[i] >= ohlcv["Open"].iloc[i] else "#FF3560"
+                    "#0E9F6E" if ohlcv["Close"].iloc[i] >= ohlcv["Open"].iloc[i] else "#E02749"
                     for i in range(len(ohlcv))
                 ]
                 fig.add_trace(go.Bar(
@@ -599,7 +599,7 @@ with tab_dive:
                     sel_keys = [rev_map[c] for c in selected_cols if c in rev_map]
 
                     fig_h = go.Figure()
-                    colors_cycle = ["#2962FF", "#00C896", "#FFB020", "#FF3560", "#9C27B0", "#00BCD4"]
+                    colors_cycle = ["#2457C5", "#0E9F6E", "#C77700", "#E02749", "#9C27B0", "#00BCD4"]
                     for i, key in enumerate(sel_keys):
                         fig_h.add_trace(go.Scatter(
                             x=df_h.index,
@@ -654,7 +654,7 @@ with tab_compare:
 
         if perf_data:
             fig_c = go.Figure()
-            colors_c = ["#2962FF", "#00C896", "#FFB020", "#FF3560", "#9C27B0",
+            colors_c = ["#2457C5", "#0E9F6E", "#C77700", "#E02749", "#9C27B0",
                         "#00BCD4", "#FF7043", "#8BC34A", "#E91E63", "#607D8B"]
             for i, (tkr, series) in enumerate(perf_data.items()):
                 fig_c.add_trace(go.Scatter(
@@ -726,9 +726,9 @@ with tab_compare:
             if s.name in positive_better:
                 norm = (s - s.min()) / (s.max() - s.min() + 1e-9)
                 return [
-                    f"background-color:rgba(0,200,150,{v*0.25:.2f});color:var(--text)"
+                    f"background-color:rgba(14,159,110,{v*0.25:.2f});color:var(--text)"
                     if v > 0.6 else (
-                        f"background-color:rgba(255,53,96,{(1-v)*0.2:.2f});color:var(--text)"
+                        f"background-color:rgba(224,39,73,{(1-v)*0.2:.2f});color:var(--text)"
                         if v < 0.35 else "color:var(--text)"
                     )
                     for v in norm.fillna(0)
@@ -736,9 +736,9 @@ with tab_compare:
             elif s.name in negative_better:
                 norm = (s - s.min()) / (s.max() - s.min() + 1e-9)
                 return [
-                    f"background-color:rgba(255,53,96,{v*0.2:.2f});color:var(--text)"
+                    f"background-color:rgba(224,39,73,{v*0.2:.2f});color:var(--text)"
                     if v > 0.6 else (
-                        f"background-color:rgba(0,200,150,{(1-v)*0.25:.2f});color:var(--text)"
+                        f"background-color:rgba(14,159,110,{(1-v)*0.25:.2f});color:var(--text)"
                         if v < 0.35 else "color:var(--text)"
                     )
                     for v in norm.fillna(0)
@@ -792,7 +792,7 @@ with tab_compare:
         if radar_data:
             fig_r = go.Figure()
             categories = list(radar_cols.values())
-            colors_r = ["#2962FF", "#00C896", "#FFB020", "#FF3560", "#9C27B0",
+            colors_r = ["#2457C5", "#0E9F6E", "#C77700", "#E02749", "#9C27B0",
                         "#00BCD4", "#FF7043", "#8BC34A", "#E91E63", "#607D8B"]
 
             def _hex_rgba(hex_color: str, alpha: float) -> str:
@@ -814,9 +814,9 @@ with tab_compare:
             layout_r = dict(CHART_LAYOUT)
             layout_r.update(dict(
                 polar=dict(
-                    bgcolor="#0A1220",
-                    radialaxis=dict(visible=True, range=[0, 1], gridcolor="#1A2840", color="#7A8BA0"),
-                    angularaxis=dict(gridcolor="#1A2840", color="#7A8BA0"),
+                    bgcolor="#FFFFFF",
+                    radialaxis=dict(visible=True, range=[0, 1], gridcolor="#E8E2D6", color="#5F6B7A"),
+                    angularaxis=dict(gridcolor="#E8E2D6", color="#5F6B7A"),
                 ),
                 height=440,
                 title="Risk / Return Profile Radar (normalised 0–1)",

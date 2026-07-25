@@ -14,8 +14,8 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
-from backend.ui import apply_styles, page_header, section_header, kpi_row, ticker_tape, disclaimer, CHART_LAYOUT
-from backend.market import fetch_prices, compute_metrics, ALLOWLIST
+from backend.ui import apply_styles, page_header, section_header, kpi_row, live_ticker_tape, disclaimer, CHART_LAYOUT
+from backend.market import fetch_prices
 from backend.indicators import (
     max_drawdown, drawdown_series, compute_beta_alpha,
     sortino_ratio, calmar_ratio,
@@ -122,12 +122,8 @@ def _money(x,c="USD"):
     try: return f"{sym}{x:,.0f}"
     except: return f"{sym}{x}"
 
-# ── Ticker tape ───────────────────────────────────────────────────────
-@st.cache_data(ttl=300, show_spinner=False)
-def _tape():
-    p,_=fetch_prices(sorted(ALLOWLIST),period="5d",interval="1d")
-    return compute_metrics(p)
-ticker_tape(_tape())
+# ── Ticker tape (shared small cached list — never the full ALLOWLIST) ──
+live_ticker_tape()
 
 page_header("Fund Backtester", "Historical simulation · Institutional risk metrics", badge="LIVE DATA")
 
@@ -140,7 +136,7 @@ default_start = today - timedelta(days=365 * 10)
 st.markdown(
     """
     <div style="
-      background:linear-gradient(135deg, rgba(41,98,255,.14), rgba(0,200,150,.06));
+      background:linear-gradient(135deg, rgba(36,87,197,.14), rgba(14,159,110,.06));
       border:1px solid var(--border);
       border-radius:14px;
       padding:14px 16px;
@@ -319,7 +315,7 @@ if run:
         for s in bench_series: df_plot[s.name]=s.reindex(df_plot.index,method="ffill")
 
         fig_eq=go.Figure()
-        palette=["#2962FF","#00C896","#FFB020","#FF3560","#A78BFA"]
+        palette=["#2457C5","#0E9F6E","#C77700","#E02749","#A78BFA"]
         for i,col in enumerate(df_plot.columns):
             fig_eq.add_trace(go.Scatter(
                 x=df_plot.index, y=df_plot[col], mode="lines", name=col,
@@ -336,7 +332,7 @@ if run:
         section_header("Drawdown")
         dd=drawdown_series(eq)*100
         fig_dd=go.Figure(go.Scatter(x=dd.index,y=dd,fill="tozeroy",
-            fillcolor="rgba(255,53,96,.12)",line=dict(color="#FF3560",width=1.5),name="Drawdown"))
+            fillcolor="rgba(224,39,73,.12)",line=dict(color="#E02749",width=1.5),name="Drawdown"))
         layout=dict(**CHART_LAYOUT); layout.update(height=220,margin=dict(l=55,r=20,t=20,b=40))
         fig_dd.update_layout(**layout)
         fig_dd.update_yaxes(title_text="Drawdown (%)")
@@ -350,8 +346,8 @@ if run:
             roll=roll.dropna()
             if not roll.empty:
                 fig_r=go.Figure(go.Scatter(x=roll.index,y=roll,fill="tozeroy",
-                    fillcolor="rgba(41,98,255,.08)",line=dict(color="#2962FF",width=1.5)))
-                fig_r.add_hline(y=0,line_color="#3A4A60",line_width=1)
+                    fillcolor="rgba(36,87,197,.08)",line=dict(color="#2457C5",width=1.5)))
+                fig_r.add_hline(y=0,line_color="#C9C2B4",line_width=1)
                 layout=dict(**CHART_LAYOUT); layout.update(height=320,margin=dict(l=55,r=20,t=20,b=40))
                 fig_r.update_layout(**layout); fig_r.update_yaxes(title_text="Trailing 12M Return (%)")
                 st.plotly_chart(fig_r,width='stretch')
@@ -360,9 +356,9 @@ if run:
             yr_eq=eq.resample("YE").last(); yr=yr_eq.pct_change(fill_method=None).dropna()
             yr.index=yr.index.year
             if not yr.empty:
-                colors=["#00C896" if v>=0 else "#FF3560" for v in yr]
+                colors=["#0E9F6E" if v>=0 else "#E02749" for v in yr]
                 fig_y=go.Figure(go.Bar(x=yr.index,y=yr*100,marker_color=colors))
-                fig_y.add_hline(y=0,line_color="#3A4A60",line_width=1)
+                fig_y.add_hline(y=0,line_color="#C9C2B4",line_width=1)
                 layout=dict(**CHART_LAYOUT); layout.update(height=320,margin=dict(l=55,r=20,t=20,b=40))
                 fig_y.update_layout(**layout); fig_y.update_yaxes(title_text="Annual Return (%)")
                 st.plotly_chart(fig_y,width='stretch')
@@ -372,8 +368,8 @@ if run:
                 var95=float(np.percentile(monthly,5))
                 cvar95=float(monthly[monthly<=var95].mean()) if (monthly<=var95).any() else var95
                 fig_d=go.Figure(go.Histogram(x=monthly*100,nbinsx=30,
-                    marker_color="#2962FF",opacity=0.7))
-                fig_d.add_vline(x=var95*100,line_dash="dash",line_color="#FF3560",
+                    marker_color="#2457C5",opacity=0.7))
+                fig_d.add_vline(x=var95*100,line_dash="dash",line_color="#E02749",
                     annotation_text=f"VaR 95%: {var95*100:.1f}%")
                 layout=dict(**CHART_LAYOUT); layout.update(height=320,margin=dict(l=55,r=20,t=30,b=40))
                 fig_d.update_layout(**layout); fig_d.update_xaxes(title_text="Monthly Return (%)")

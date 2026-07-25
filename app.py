@@ -5,35 +5,19 @@ Landing page with live ticker tape and feature overview.
 """
 
 import streamlit as st
-from backend.ui import apply_styles, ticker_tape
-from backend.market import fetch_prices, compute_metrics, ALLOWLIST
+from backend.ui import apply_styles, live_ticker_tape, nav_bar
 
 st.set_page_config(
     page_title="AssetEra — Portfolio Intelligence",
     page_icon="📊",
     layout="wide",
-    initial_sidebar_state="collapsed",
+    initial_sidebar_state="auto",
 )
 apply_styles()
+nav_bar(active="Home")
 
-# ── Ticker tape (load key tickers only) ────────────────────────────────
-# Focus on the most popular ETFs and stocks for faster initial load
-TOP_TICKERS = ["SPY", "QQQ", "DIA", "IWM", "AGG", "NVDA", "MSFT", "AVGO", "LQD", "VEA"]
-
-@st.cache_data(ttl=300, show_spinner=False)
-def _load_tape():
-    prices, _ = fetch_prices(TOP_TICKERS, period="5d", interval="1d")
-    return compute_metrics(prices)
-
-with st.spinner("📊 Loading market data..."):
-    try:
-        tape_df = _load_tape()
-        if tape_df is not None and not tape_df.empty:
-            ticker_tape(tape_df)
-        else:
-            st.warning("Market data temporarily unavailable")
-    except Exception as e:
-        st.warning(f"Could not load market data: {e}")
+# ── Ticker tape (shared small cached list — never the full ALLOWLIST) ───
+live_ticker_tape()
 
 # ── Hero ──────────────────────────────────────────────────────────────
 st.markdown(

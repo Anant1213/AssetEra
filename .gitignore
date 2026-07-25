@@ -24,4 +24,5 @@ models/risk_model.pkl
 .vscode/
 *.code-workspace
 .claude/
+.telegram_control/
 data_cache/

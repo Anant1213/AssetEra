@@ -26,7 +26,7 @@ st.markdown("""
 .dw-kpi-strip { display:flex; flex-wrap:wrap; gap:12px; margin:1rem 0; }
 .dw-kpi-card {
   flex:1 1 140px; min-width:130px;
-  background:linear-gradient(135deg,var(--bg-card) 0%,rgba(41,98,255,.04) 100%);
+  background:linear-gradient(135deg,var(--bg-card) 0%,rgba(36,87,197,.04) 100%);
   border:1px solid var(--border); border-radius:var(--r-lg);
   padding:.9rem 1.1rem; position:relative; overflow:hidden;
 }
@@ -47,12 +47,12 @@ st.markdown("""
   letter-spacing:.08em; margin-top:.4rem; }
 
 /* ── Issue cards ─────────────────────────────────── */
-.issue-high    { border-left:4px solid #FF3560; padding:8px 12px;
-  background:rgba(255,53,96,.07); border-radius:0 8px 8px 0; margin:5px 0; font-size:.84rem; }
-.issue-warning { border-left:4px solid #FFB020; padding:8px 12px;
-  background:rgba(255,176,32,.07); border-radius:0 8px 8px 0; margin:5px 0; font-size:.84rem; }
-.issue-info    { border-left:4px solid #2962FF; padding:8px 12px;
-  background:rgba(41,98,255,.07); border-radius:0 8px 8px 0; margin:5px 0; font-size:.84rem; }
+.issue-high    { border-left:4px solid #E02749; padding:8px 12px;
+  background:rgba(224,39,73,.07); border-radius:0 8px 8px 0; margin:5px 0; font-size:.84rem; }
+.issue-warning { border-left:4px solid #C77700; padding:8px 12px;
+  background:rgba(199,119,0,.07); border-radius:0 8px 8px 0; margin:5px 0; font-size:.84rem; }
+.issue-info    { border-left:4px solid #2457C5; padding:8px 12px;
+  background:rgba(36,87,197,.07); border-radius:0 8px 8px 0; margin:5px 0; font-size:.84rem; }
 
 /* ── AI badge ────────────────────────────────────── */
 .ai-badge { display:inline-block; font-size:.58rem; font-weight:700;
@@ -61,7 +61,7 @@ st.markdown("""
 
 /* ── SQL box ─────────────────────────────────────── */
 .sql-box { font-family:var(--mono); font-size:.8rem;
-  background:var(--bg-overlay); color:#00C896;
+  background:var(--bg-overlay); color:#0E9F6E;
   border:1px solid var(--border); border-radius:var(--r-md);
   padding:.8rem 1rem; margin:.5rem 0; overflow-x:auto; white-space:pre-wrap; }
 
@@ -71,7 +71,7 @@ st.markdown("""
   border-radius:var(--r-lg); padding:1rem; margin-bottom:1rem;
   transition: border-color .2s, box-shadow .2s;
 }
-.chart-card:hover { border-color:rgba(41,98,255,.4); box-shadow:0 4px 24px rgba(41,98,255,.08); }
+.chart-card:hover { border-color:rgba(36,87,197,.4); box-shadow:0 4px 24px rgba(36,87,197,.08); }
 .chart-title { font-size:.82rem; font-weight:700; color:var(--text-2);
   text-transform:uppercase; letter-spacing:.06em; margin-bottom:.5rem; }
 .chart-expl { font-size:.76rem; color:var(--text-2); margin-bottom:.6rem; line-height:1.5; }
@@ -84,8 +84,8 @@ st.markdown("""
 
 /* ── Upload zone ─────────────────────────────────── */
 .upload-hint {
-  background:linear-gradient(135deg,rgba(41,98,255,.06) 0%,rgba(0,200,150,.04) 100%);
-  border:1.5px dashed rgba(41,98,255,.35); border-radius:var(--r-lg);
+  background:linear-gradient(135deg,rgba(36,87,197,.06) 0%,rgba(14,159,110,.04) 100%);
+  border:1.5px dashed rgba(36,87,197,.35); border-radius:var(--r-lg);
   padding:1.4rem 1.6rem; margin-bottom:1rem; text-align:center;
 }
 .upload-hint p { color:var(--text-2); font-size:.86rem; margin:.3rem 0; }
@@ -118,7 +118,7 @@ for _k in ("project_id", "dataset_id", "profile", "quality", "views", "llm"):
 # ═══════════════════════════════════════════════════════════════
 # HELPERS
 # ═══════════════════════════════════════════════════════════════
-_PALETTE = ["#2962FF","#00C896","#FFB020","#FF3560","#A78BFA",
+_PALETTE = ["#2457C5","#0E9F6E","#C77700","#E02749","#A78BFA",
             "#10B981","#F59E0B","#EC4899","#6366F1","#14B8A6",
             "#F97316","#06B6D4","#84CC16"]
 
@@ -166,7 +166,7 @@ def _render_chart(spec: dict, df: pd.DataFrame, profile: dict) -> go.Figure | No
         if not data:
             return None
         ndf = pd.DataFrame(data, columns=["col", "pct"]).sort_values("pct", ascending=True)
-        colors = ["#FF3560" if v > 50 else ("#FFB020" if v > 20 else "#2962FF") for v in ndf["pct"]]
+        colors = ["#E02749" if v > 50 else ("#C77700" if v > 20 else "#2457C5") for v in ndf["pct"]]
         fig = go.Figure(go.Bar(x=ndf["pct"], y=ndf["col"], orientation="h",
                                marker_color=colors, opacity=0.85))
         lyt["height"] = max(220, len(ndf) * 28 + 80)
@@ -181,8 +181,8 @@ def _render_chart(spec: dict, df: pd.DataFrame, profile: dict) -> go.Figure | No
             return None
         fig = go.Figure(go.Histogram(
             x=s, nbinsx=40,
-            marker=dict(color="#2962FF", opacity=0.85,
-                        line=dict(color="rgba(41,98,255,.3)", width=0.5)),
+            marker=dict(color="#2457C5", opacity=0.85,
+                        line=dict(color="rgba(36,87,197,.3)", width=0.5)),
         ))
         fig.update_layout(**lyt)
         fig.update_xaxes(title=x)
@@ -225,15 +225,15 @@ def _render_chart(spec: dict, df: pd.DataFrame, profile: dict) -> go.Figure | No
             w = spec.get("window", 7)
             dfc[f"roll_{w}"] = dfc[y].rolling(w, min_periods=1).mean()
             fig.add_trace(go.Scatter(x=dfc[x], y=dfc[y], name=y,
-                                     line=dict(color="rgba(41,98,255,.35)", width=1)))
+                                     line=dict(color="rgba(36,87,197,.35)", width=1)))
             fig.add_trace(go.Scatter(x=dfc[x], y=dfc[f"roll_{w}"],
                                      name=f"{w}-period MA",
-                                     line=dict(color="#00C896", width=2.2)))
+                                     line=dict(color="#0E9F6E", width=2.2)))
         else:
             fig.add_trace(go.Scatter(x=dfc[x], y=dfc[y], name=y,
                                      fill="tozeroy",
-                                     fillcolor="rgba(41,98,255,.06)",
-                                     line=dict(color="#2962FF", width=2)))
+                                     fillcolor="rgba(36,87,197,.06)",
+                                     line=dict(color="#2457C5", width=2)))
         fig.update_layout(**lyt)
         return fig
 
@@ -246,7 +246,7 @@ def _render_chart(spec: dict, df: pd.DataFrame, profile: dict) -> go.Figure | No
         corr = df[cols].apply(pd.to_numeric, errors="coerce").corr().round(2)
         fig = go.Figure(go.Heatmap(
             z=corr.values, x=corr.columns, y=corr.index,
-            colorscale=[[0,"#FF3560"],[0.5,"#0A1220"],[1,"#00C896"]],
+            colorscale=[[0,"#E02749"],[0.5,"#FFFFFF"],[1,"#0E9F6E"]],
             zmid=0, zmin=-1, zmax=1,
             text=corr.values, texttemplate="%{text:.2f}",
             textfont=dict(size=9),
@@ -276,7 +276,7 @@ def _render_chart(spec: dict, df: pd.DataFrame, profile: dict) -> go.Figure | No
             fig  = px.box(dfc, x=x, y=y, color=x,
                           color_discrete_sequence=_PALETTE)
         else:
-            fig = px.box(dfc, y=y, color_discrete_sequence=["#2962FF"])
+            fig = px.box(dfc, y=y, color_discrete_sequence=["#2457C5"])
         fig.update_layout(**lyt)
         return fig
 
@@ -474,12 +474,12 @@ with tab_upload:
                             rows = result["rows"]
                             cols = result["columns"]
                             score = quality["score"]
-                            sc = "#00C896" if score >= 80 else ("#FFB020" if score >= 60 else "#FF3560")
+                            sc = "#0E9F6E" if score >= 80 else ("#C77700" if score >= 60 else "#E02749")
                             st.markdown(
-                                f'<div style="background:linear-gradient(135deg,rgba(0,200,150,.08),rgba(41,98,255,.06));'
-                                f'border:1px solid rgba(0,200,150,.3);border-radius:var(--r-lg);'
+                                f'<div style="background:linear-gradient(135deg,rgba(14,159,110,.08),rgba(36,87,197,.06));'
+                                f'border:1px solid rgba(14,159,110,.3);border-radius:var(--r-lg);'
                                 f'padding:1rem 1.3rem;margin-top:.8rem;">'
-                                f'<div style="font-size:1rem;font-weight:700;color:#00C896;margin-bottom:.4rem;">✓ Dataset ready</div>'
+                                f'<div style="font-size:1rem;font-weight:700;color:#0E9F6E;margin-bottom:.4rem;">✓ Dataset ready</div>'
                                 f'<div style="color:var(--text-2);font-size:.86rem;">'
                                 f'<b style="color:var(--text);">{rows:,}</b> rows &nbsp;·&nbsp; '
                                 f'<b style="color:var(--text);">{cols}</b> columns &nbsp;·&nbsp; '
@@ -494,7 +494,7 @@ with tab_upload:
             if datasets:
                 section_header("Datasets in this project")
                 for d in datasets[:10]:
-                    sc_col = "#00C896" if d.get("status") == "ready" else "#FFB020"
+                    sc_col = "#0E9F6E" if d.get("status") == "ready" else "#C77700"
                     st.markdown(
                         f'<div style="background:var(--bg-card);border:1px solid var(--border);'
                         f'border-radius:var(--r-md);padding:.65rem 1rem;margin:.4rem 0;'
@@ -538,17 +538,17 @@ with tab_overview:
                 st.warning("No profile found. Re-process the dataset from the Upload tab.")
             else:
                 q_score  = (quality or {}).get("score", 0) if quality else 0
-                q_color  = "#00C896" if q_score >= 80 else ("#FFB020" if q_score >= 60 else "#FF3560")
+                q_color  = "#0E9F6E" if q_score >= 80 else ("#C77700" if q_score >= 60 else "#E02749")
                 dup_pct  = profile.get("duplicate_pct", 0) * 100
                 mem_mb   = profile.get("memory_mb", "—")
 
                 # ── KPI strip ──────────────────────────────────────────────
                 st.markdown(
                     '<div class="dw-kpi-strip">'
-                    + _kpi("Rows",          f"{profile.get('row_count', 0):,}",   "total records",  "#2962FF")
-                    + _kpi("Columns",       str(profile.get("column_count", 0)),  "features",       "#00C896")
-                    + _kpi("Memory",        f"{mem_mb} MB",                       "in-memory size", "#FFB020")
-                    + _kpi("Duplicates",    f"{dup_pct:.1f}%",                    "duplicate rows", "#F97316" if dup_pct > 5 else "#7A8BA0")
+                    + _kpi("Rows",          f"{profile.get('row_count', 0):,}",   "total records",  "#2457C5")
+                    + _kpi("Columns",       str(profile.get("column_count", 0)),  "features",       "#0E9F6E")
+                    + _kpi("Memory",        f"{mem_mb} MB",                       "in-memory size", "#C77700")
+                    + _kpi("Duplicates",    f"{dup_pct:.1f}%",                    "duplicate rows", "#F97316" if dup_pct > 5 else "#5F6B7A")
                     + _kpi("Numeric cols",  str(len(profile.get("numeric_columns",   []))), "", "#A78BFA")
                     + _kpi("Date cols",     str(len(profile.get("date_columns",      []))), "", "#06B6D4")
                     + _kpi("Category cols", str(len(profile.get("categorical_columns",[]))), "", "#10B981")
@@ -563,8 +563,8 @@ with tab_overview:
                 # ── AI summary ─────────────────────────────────────────────
                 if llm.get("summary"):
                     st.markdown(
-                        f'<div style="background:linear-gradient(135deg,rgba(41,98,255,.06),rgba(0,200,150,.03));'
-                        f'border:1px solid rgba(41,98,255,.2);border-radius:var(--r-lg);'
+                        f'<div style="background:linear-gradient(135deg,rgba(36,87,197,.06),rgba(14,159,110,.03));'
+                        f'border:1px solid rgba(36,87,197,.2);border-radius:var(--r-lg);'
                         f'padding:1.1rem 1.4rem;margin:.8rem 0;">'
                         f'<div style="font-size:.7rem;color:var(--accent);text-transform:uppercase;'
                         f'letter-spacing:.08em;margin-bottom:.5rem;font-weight:700;">AI Summary</div>'
@@ -575,7 +575,7 @@ with tab_overview:
                     if llm.get("key_observations"):
                         obs_html = "".join(
                             f'<div style="display:flex;align-items:flex-start;gap:8px;margin:.3rem 0;">'
-                            f'<span style="color:#2962FF;font-weight:700;margin-top:2px;">›</span>'
+                            f'<span style="color:#2457C5;font-weight:700;margin-top:2px;">›</span>'
                             f'<span style="font-size:.88rem;color:var(--text-2);">{o}</span></div>'
                             for o in llm["key_observations"]
                         )
@@ -626,7 +626,13 @@ with tab_overview:
                     try:
                         @st.cache_data(ttl=300, show_spinner=False)
                         def _load_preview(key: str) -> pd.DataFrame:
-                            return read_curated("", key)
+                            # Preview shows only .head(10) — read the small sample
+                            # parquet, not the full curated dataset. Fall back to
+                            # the full read only if no sample exists.
+                            df = read_curated("", key, sample=True)
+                            if df.empty:
+                                df = read_curated("", key)
+                            return df
                         prev_df = _load_preview(curated_key)
                         if not prev_df.empty:
                             st.markdown('<hr style="border-color:var(--border);margin:.9rem 0;">', unsafe_allow_html=True)
@@ -644,7 +650,7 @@ with tab_overview:
                             section_header("Suggested KPIs")
                             for k in llm["suggested_kpis"][:5]:
                                 st.markdown(
-                                    f'<div style="border-left:3px solid #2962FF;padding:5px 10px;margin:4px 0;'
+                                    f'<div style="border-left:3px solid #2457C5;padding:5px 10px;margin:4px 0;'
                                     f'font-size:.86rem;">'
                                     f'<b style="color:var(--text);">{k.get("name","")}</b>'
                                     f'<br><span style="color:var(--text-2);">{k.get("how","")}</span></div>',
@@ -677,13 +683,13 @@ with tab_quality:
         profile = st.session_state["profile"] or {}
         score   = quality.get("score", 0)
         summary = quality.get("summary", {})
-        sc_col  = "#00C896" if score >= 80 else ("#FFB020" if score >= 60 else "#FF3560")
+        sc_col  = "#0E9F6E" if score >= 80 else ("#C77700" if score >= 60 else "#E02749")
 
         # ── Score hero ─────────────────────────────────────────────────
         hero_l, hero_r = st.columns([1, 2])
         with hero_l:
             st.markdown(
-                f'<div style="background:linear-gradient(135deg,rgba(41,98,255,.05),rgba(0,0,0,0));'
+                f'<div style="background:linear-gradient(135deg,rgba(36,87,197,.05),rgba(0,0,0,0));'
                 f'border:1px solid var(--border);border-radius:var(--r-xl);padding:2rem 1.5rem;text-align:center;">'
                 f'<div style="font-size:.65rem;color:var(--text-2);text-transform:uppercase;'
                 f'letter-spacing:.1em;margin-bottom:.6rem;">Data Health Score</div>'
@@ -692,9 +698,9 @@ with tab_quality:
                 f'<div style="font-size:1.1rem;color:var(--text-2);margin-top:.2rem;">/100</div>'
                 f'<div style="margin-top:1rem;display:flex;justify-content:center;gap:12px;'
                 f'flex-wrap:wrap;font-size:.78rem;">'
-                f'<span style="color:#FF3560;">🔴 {summary.get("high",0)} critical</span>'
-                f'<span style="color:#FFB020;">🟡 {summary.get("warning",0)} warnings</span>'
-                f'<span style="color:#2962FF;">🔵 {summary.get("info",0)} info</span>'
+                f'<span style="color:#E02749;">🔴 {summary.get("high",0)} critical</span>'
+                f'<span style="color:#C77700;">🟡 {summary.get("warning",0)} warnings</span>'
+                f'<span style="color:#2457C5;">🔵 {summary.get("info",0)} info</span>'
                 f'</div></div>',
                 unsafe_allow_html=True,
             )
@@ -717,7 +723,7 @@ with tab_quality:
                 orientation="h",
                 marker=dict(
                     color=[comp_score, uniq_score, cons_score, val_score],
-                    colorscale=[[0,"#FF3560"],[0.6,"#FFB020"],[1,"#00C896"]],
+                    colorscale=[[0,"#E02749"],[0.6,"#C77700"],[1,"#0E9F6E"]],
                     cmin=0, cmax=100, showscale=False,
                 ),
                 text=[f"{v}/100" for v in [comp_score, uniq_score, cons_score, val_score]],
@@ -754,7 +760,7 @@ with tab_quality:
             st.markdown('<hr style="border-color:var(--border);margin:.8rem 0;">', unsafe_allow_html=True)
             section_header("Missing Values by Column")
             ndf = pd.DataFrame(null_data, columns=["Column","Pct"]).sort_values("Pct", ascending=True)
-            colors = ["#FF3560" if v > 50 else ("#FFB020" if v > 20 else "#2962FF") for v in ndf["Pct"]]
+            colors = ["#E02749" if v > 50 else ("#C77700" if v > 20 else "#2457C5") for v in ndf["Pct"]]
             fig_null = go.Figure(go.Bar(
                 x=ndf["Pct"], y=ndf["Column"], orientation="h",
                 marker_color=colors, opacity=0.85,
@@ -790,7 +796,12 @@ with tab_views:
 
             @st.cache_data(ttl=300, show_spinner=False)
             def _load_df(key: str) -> pd.DataFrame:
-                return read_curated("", key)
+                # Auto Views are illustrative — default to the small sample
+                # parquet. The full dataset is reserved for explicit Ask/export.
+                df = read_curated("", key, sample=True)
+                if df.empty:
+                    df = read_curated("", key)
+                return df
 
             df = _load_df(curated_key)
             if df.empty:
@@ -856,7 +867,7 @@ with tab_views:
                                     level = view.get("view_level", "basic")
                                     expl  = view.get("explanation", "")
                                     ai_b  = '<span class="ai-badge">AI</span>' if spec.get("ai_generated") else ""
-                                    lv_c  = {"basic":"#00C896","intermediate":"#FFB020","advanced":"#FF3560"}.get(level,"#7A8BA0")
+                                    lv_c  = {"basic":"#0E9F6E","intermediate":"#C77700","advanced":"#E02749"}.get(level,"#5F6B7A")
 
                                     st.markdown(
                                         f'<div class="chart-card">'
@@ -983,7 +994,7 @@ with tab_ask:
                             elif num_c and not cat_c and len(df_result) > 5:
                                 fig_r = go.Figure(go.Histogram(
                                     x=df_result[num_c[0]].dropna(),
-                                    nbinsx=30, marker_color="#2962FF", opacity=0.8,
+                                    nbinsx=30, marker_color="#2457C5", opacity=0.8,
                                 ))
                                 fig_r.update_layout(**_lyt(260, "Result Distribution"))
                                 st.plotly_chart(fig_r, use_container_width=True)
